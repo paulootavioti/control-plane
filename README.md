@@ -42,6 +42,10 @@ O detalhe fica em `GET /api/assinantes/:assinanteId` e limita o histórico às
 12 faturas mais recentes, sem retornar referências de segredo ou credenciais
 do ambiente.
 
+`POST /api/assinantes`, restrito a `OPERADOR` e `ADMIN_PLATAFORMA`, cadastra
+uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
+inicia provisionamento implicitamente; essas operações permanecem separadas.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
