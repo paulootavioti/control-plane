@@ -77,6 +77,12 @@ transação. Falhas temporárias permanecem disponíveis para retomada; somente 
 esgotamento das cinco tentativas muda o assinante para
 `ERRO_PROVISIONAMENTO`.
 
+Após corrigir a causa, um operador pode usar
+`POST /api/provisionamento/solicitacoes/:eventoId/retomar`. O comando exige
+assinatura em teste ou ativa, reabre o mesmo evento de forma idempotente,
+preserva a última etapa concluída e registra auditoria; nenhum banco adicional
+é criado.
+
 Operadores com perfil `OPERADOR` ou `ADMIN_PLATAFORMA` podem criar a
 solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
 exige uma assinatura corrente em teste ou ativa e registra ambiente, evento e
