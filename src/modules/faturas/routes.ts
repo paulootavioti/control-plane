@@ -6,6 +6,7 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { competenciaSchema } from "../comercial/regrasComerciais";
 import { GerarFaturaService } from "./GerarFaturaService";
+import { EmitirFaturaService } from "./EmitirFaturaService";
 
 export const faturasRoutes = Router();
 
@@ -36,6 +37,30 @@ faturasRoutes.post(
       }
       if (erro instanceof Error && erro.message === "SEM_UNIDADES_FATURAVEIS") {
         return response.status(409).json({ mensagem: "Não há unidades ativas para faturar." });
+      }
+      throw erro;
+    }
+  },
+);
+
+faturasRoutes.post(
+  "/:faturaId/emitir",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const faturaId = z.string().uuid().safeParse(request.params.faturaId);
+    if (!faturaId.success) return response.status(400).json({ mensagem: "Fatura inválida." });
+    try {
+      const resultado = await new EmitirFaturaService(prisma).execute(
+        faturaId.data,
+        contextoAuditoria(request, response),
+      );
+      return response.status(200).json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "FATURA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Fatura não encontrada." });
+      }
+      if (erro instanceof Error && erro.message === "FATURA_NAO_EMITIVEL") {
+        return response.status(409).json({ mensagem: "Fatura não está em estado válido para emissão." });
       }
       throw erro;
     }
