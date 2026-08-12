@@ -34,6 +34,14 @@ e execute `npm run seed:operator` uma única vez. Não há usuário ou senha pad
 O login usa `POST /api/auth/login` e a sessão pode ser consultada em
 `GET /api/auth/me`.
 
+## Worker de provisionamento
+
+A função `provisionar-background` é protegida por
+`CONTROL_PLANE_WORKER_SECRET`. Por segurança,
+`PROVISIONAMENTO_REAL_HABILITADO` deve permanecer `false` até os adaptadores
+Neon e do cofre de segredos estarem configurados e validados. Enquanto isso,
+a função não adquire nem altera eventos da fila.
+
 ## Netlify
 
 Crie um site separado apontando o **base directory** para `control-plane`.

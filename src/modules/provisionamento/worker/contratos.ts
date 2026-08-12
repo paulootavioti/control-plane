@@ -31,7 +31,8 @@ export interface InfraestruturaTenant {
 }
 
 export interface RepositorioProvisionamento {
-  iniciar(eventoId: string): Promise<void>;
+  obterProximoElegivel(): Promise<EventoParaProcessar | null>;
+  iniciar(eventoId: string): Promise<boolean>;
   obterInventario(ambienteTenantId: string): Promise<(InventarioProjeto & { secretRef: string | null }) | null>;
   concluirEtapa(
     eventoId: string,

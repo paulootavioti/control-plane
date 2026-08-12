@@ -13,7 +13,8 @@ const evento: EventoParaProcessar = {
 
 function dependencias() {
   const repositorio: RepositorioProvisionamento = {
-    iniciar: vi.fn(),
+    obterProximoElegivel: vi.fn().mockResolvedValue(evento),
+    iniciar: vi.fn().mockResolvedValue(true),
     obterInventario: vi.fn().mockResolvedValue(null),
     concluirEtapa: vi.fn(),
     concluir: vi.fn(),
@@ -65,6 +66,16 @@ describe("worker de provisionamento", () => {
     expect(infraestrutura.aplicarMigrations).not.toHaveBeenCalled();
     expect(infraestrutura.executarBootstrap).toHaveBeenCalledOnce();
     expect(infraestrutura.validarSaude).toHaveBeenCalledOnce();
+  });
+
+  it("não executa quando outro worker adquiriu o evento", async () => {
+    const { repositorio, infraestrutura } = dependencias();
+    vi.mocked(repositorio.iniciar).mockResolvedValue(false);
+
+    await new ExecutarProvisionamento(repositorio, infraestrutura).execute(evento);
+
+    expect(infraestrutura.criarOuReconciliarProjeto).not.toHaveBeenCalled();
+    expect(repositorio.falhar).not.toHaveBeenCalled();
   });
 
   it("registra falha sanitizada e mantém o erro para retentativa", async () => {

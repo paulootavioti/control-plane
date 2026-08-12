@@ -29,7 +29,8 @@ export class ExecutarProvisionamento {
     let etapaAtual = evento.etapaAtual;
 
     try {
-      await this.repositorio.iniciar(evento.id);
+      const adquirido = await this.repositorio.iniciar(evento.id);
+      if (!adquirido) return;
       let existente = await this.repositorio.obterInventario(evento.ambienteTenantId);
       let inventario: InventarioProjeto;
 
