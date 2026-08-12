@@ -1,0 +1,12 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CONTROL_PLANE_DATABASE_URL")
+}
+
+// Os modelos comerciais entram na próxima etapa. Este schema vazio torna
+// explícito que o Control Plane nunca usa o DATABASE_URL de uma academia.

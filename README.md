@@ -1,0 +1,34 @@
+# SysBelt Control Plane
+
+Aplicação independente que administra assinantes, planos, assinaturas,
+provisionamento e a saúde comercial da plataforma B2B. Ela não armazena os
+dados operacionais das academias.
+
+## Fronteiras
+
+- possui banco PostgreSQL e credenciais próprios;
+- possui build e deploy Netlify próprios;
+- não importa código da API do Tenant Plane;
+- integra-se com cada academia somente por contratos versionados;
+- nesta primeira etapa, expõe apenas `GET /api/health` no Netlify e
+  `GET /health` durante o desenvolvimento local.
+
+## Desenvolvimento local
+
+Requer Node.js 20 ou superior.
+
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Os modelos comerciais serão adicionados ao `prisma/schema.prisma` na próxima
+etapa. Até lá, a URL é declarada para registrar explicitamente a fronteira do
+banco, mas a rota de health check não abre conexão.
+
+## Netlify
+
+Crie um site separado apontando o **base directory** para `control-plane`.
+Configure `CONTROL_PLANE_DATABASE_URL` somente no ambiente desse site. O site
+das academias não deve receber essa variável.
