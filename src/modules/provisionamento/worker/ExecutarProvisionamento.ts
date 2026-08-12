@@ -4,6 +4,7 @@ import {
   EventoParaProcessar,
   InfraestruturaTenant,
   InventarioProjeto,
+  ProjetoProvisionado,
   RepositorioProvisionamento,
 } from "./contratos";
 
@@ -32,7 +33,7 @@ export class ExecutarProvisionamento {
       const adquirido = await this.repositorio.iniciar(evento.id);
       if (!adquirido) return;
       let existente = await this.repositorio.obterInventario(evento.ambienteTenantId);
-      let inventario: InventarioProjeto;
+      let inventario: ProjetoProvisionado;
 
       if (precisaExecutar(etapaAtual, "PROJETO_CRIADO")) {
         inventario = await this.infraestrutura.criarOuReconciliarProjeto(evento);
@@ -40,7 +41,10 @@ export class ExecutarProvisionamento {
         etapaAtual = "PROJETO_CRIADO";
       } else {
         if (!existente) throw new Error("Inventário do projeto não encontrado para retomada.");
-        inventario = existente;
+        if (!existente.secretRef) {
+          throw new Error("Retomada requer credenciais transitórias no cofre antes de concluir a etapa do projeto.");
+        }
+        inventario = { ...existente, pooledUrl: "", directUrl: "" };
       }
 
       existente = existente ?? { ...inventario, secretRef: null };

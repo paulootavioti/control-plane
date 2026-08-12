@@ -15,6 +15,13 @@ export type InventarioProjeto = {
   postgresVersion: number;
 };
 
+export type ProjetoProvisionado = InventarioProjeto & {
+  // Material transitório: segue diretamente ao cofre e nunca é persistido no
+  // banco central ou incluído em logs.
+  pooledUrl: string;
+  directUrl: string;
+};
+
 export type SegredoTenantRegistrado = {
   secretRef: string;
   chavePublicaIntegracao: string;
@@ -28,12 +35,12 @@ export type EtapaConcluida =
   | "HEALTH_CHECK_VALIDADO";
 
 export interface InfraestruturaTenant {
-  criarOuReconciliarProjeto(evento: EventoParaProcessar): Promise<InventarioProjeto>;
+  criarOuReconciliarProjeto(evento: EventoParaProcessar): Promise<ProjetoProvisionado>;
   // O adaptador gera o par Ed25519 e grava a chave privada junto às URLs do
   // banco no cofre. Somente a referência e a chave pública retornam daqui.
   gravarOuValidarSegredo(
     evento: EventoParaProcessar,
-    inventario: InventarioProjeto,
+    inventario: ProjetoProvisionado,
   ): Promise<SegredoTenantRegistrado>;
   aplicarMigrations(evento: EventoParaProcessar, secretRef: string): Promise<string>;
   executarBootstrap(evento: EventoParaProcessar, secretRef: string): Promise<void>;

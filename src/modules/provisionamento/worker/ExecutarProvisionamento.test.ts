@@ -28,6 +28,8 @@ function dependencias() {
       databaseName: "sysbelt",
       roleName: "runtime",
       postgresVersion: 16,
+      pooledUrl: "postgresql://pooled",
+      directUrl: "postgresql://direct",
     }),
     gravarOuValidarSegredo: vi.fn().mockResolvedValue({
       secretRef: "sysbelt/prod/tenants/tenant-1/database",
