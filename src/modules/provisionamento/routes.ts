@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { autenticarOperador } from "../auth/autenticarOperador";
+import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { prisma } from "../../shared/prisma";
 import { SolicitarProvisionamento } from "./SolicitarProvisionamento";
 
@@ -20,7 +21,10 @@ provisionamentoRoutes.post(
     const validacao = solicitacaoSchema.safeParse(request.body);
     if (!validacao.success) return response.status(400).json({ mensagem: "Solicitação inválida." });
     try {
-      const resultado = await new SolicitarProvisionamento(prisma).execute(validacao.data);
+      const resultado = await new SolicitarProvisionamento(prisma).execute(
+        validacao.data,
+        contextoAuditoria(request, response),
+      );
       return response.status(resultado.duplicado ? 200 : 202).json(resultado);
     } catch (erro) {
       if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") {
@@ -28,6 +32,9 @@ provisionamentoRoutes.post(
       }
       if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ELEGIVEL") {
         return response.status(409).json({ mensagem: "Assinante não está elegível para provisionamento." });
+      }
+      if (erro instanceof Error && erro.message === "ASSINATURA_NAO_ELEGIVEL") {
+        return response.status(409).json({ mensagem: "Assinante não possui assinatura elegível para provisionamento." });
       }
       throw erro;
     }

@@ -74,7 +74,8 @@ a função não adquire nem altera eventos da fila.
 
 Operadores com perfil `OPERADOR` ou `ADMIN_PLATAFORMA` podem criar a
 solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
-apenas registra ambiente e evento; não habilita os adaptadores reais.
+exige uma assinatura corrente em teste ou ativa e registra ambiente, evento e
+auditoria na mesma transação; ela não habilita os adaptadores reais.
 
 Concessões são emitidas com revisão atômica e validade de 24 horas usando
 `CONTROL_PLANE_GRANT_PRIVATE_KEY`. A chave pública correspondente é a única

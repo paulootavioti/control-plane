@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
 
 export type DadosSolicitacao = {
   assinanteId: string;
@@ -10,7 +11,7 @@ export type DadosSolicitacao = {
 export class SolicitarProvisionamento {
   constructor(private readonly db: PrismaClient) {}
 
-  async execute(dados: DadosSolicitacao) {
+  async execute(dados: DadosSolicitacao, auditoria: ContextoAuditoria) {
     const chaveIdempotencia = `criar-ambiente:${dados.assinanteId}:v1`;
     const existente = await this.obterExistente(dados.assinanteId, chaveIdempotencia);
     if (existente) return { ...existente, duplicado: true };
@@ -25,6 +26,16 @@ export class SolicitarProvisionamento {
           throw new Error("ASSINANTE_NAO_ELEGIVEL");
         }
 
+        const assinatura = await tx.assinatura.findFirst({
+          where: {
+            assinanteId: dados.assinanteId,
+            encerradaEm: null,
+            status: { in: ["TESTE", "ATIVA"] },
+          },
+          select: { id: true },
+        });
+        if (!assinatura) throw new Error("ASSINATURA_NAO_ELEGIVEL");
+
         const ambiente = await tx.ambienteTenant.create({ data: {
           assinanteId: dados.assinanteId,
           tenantKey: randomUUID(),
@@ -35,6 +46,18 @@ export class SolicitarProvisionamento {
         await tx.assinante.update({
           where: { id: dados.assinanteId }, data: { status: "EM_PROVISIONAMENTO" },
         });
+        await tx.auditLogPlataforma.create({ data: {
+          ...auditoria,
+          assinanteId: dados.assinanteId,
+          acao: "PROVISIONAMENTO_SOLICITADO",
+          alvoTipo: "AMBIENTE_TENANT",
+          alvoId: ambiente.id,
+          mudancas: {
+            assinaturaId: assinatura.id,
+            regiao: dados.regiao,
+            schemaVersaoDesejada: dados.schemaVersaoDesejada,
+          },
+        } });
         return { ambienteId: ambiente.id, tenantKey: ambiente.tenantKey, eventoId: ambiente.eventos[0].id, duplicado: false };
       });
     } catch (erro) {
