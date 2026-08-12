@@ -93,6 +93,7 @@ model OperadorPlataforma {
   ultimoLoginEm DateTime?
   criadoEm      DateTime       @default(now())
   atualizadoEm  DateTime       @updatedAt
+  auditorias    AuditLogPlataforma[]
 
   @@index([ativo, perfil])
 }
@@ -115,8 +116,30 @@ model Assinante {
   ambiente    AmbienteTenant?
   licencas    LicencaUnidade[]
   snapshotsContagem SnapshotContagem[]
+  auditorias   AuditLogPlataforma[]
 
   @@index([status])
+}
+
+model AuditLogPlataforma {
+  id           String   @id @default(uuid()) @db.Uuid
+  operadorId   String   @db.Uuid
+  assinanteId  String?  @db.Uuid
+  origem       String   @db.VarChar(30)
+  acao         String   @db.VarChar(100)
+  alvoTipo     String   @db.VarChar(60)
+  alvoId       String
+  mudancas     Json?
+  ip           String?
+  userAgent    String?
+  criadoEm     DateTime @default(now())
+
+  operador  OperadorPlataforma @relation(fields: [operadorId], references: [id], onDelete: Restrict)
+  assinante Assinante?         @relation(fields: [assinanteId], references: [id], onDelete: SetNull)
+
+  @@index([assinanteId, criadoEm])
+  @@index([operadorId, criadoEm])
+  @@index([alvoTipo, alvoId])
 }
 
 model LicencaUnidade {

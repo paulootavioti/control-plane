@@ -10,6 +10,7 @@ import { planosRoutes } from "./modules/planos/routes";
 
 export const app = express();
 
+app.set("trust proxy", true);
 app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());

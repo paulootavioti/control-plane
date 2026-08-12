@@ -1,4 +1,5 @@
 import { PrismaClient, StatusAssinatura } from "@prisma/client";
+import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
 
 const TRANSICOES: Record<StatusAssinatura, StatusAssinatura[]> = {
   TESTE: ["ATIVA", "SUSPENSA", "CANCELADA"],
@@ -11,7 +12,7 @@ const TRANSICOES: Record<StatusAssinatura, StatusAssinatura[]> = {
 export class AlterarStatusAssinaturaService {
   constructor(private readonly db: PrismaClient) {}
 
-  async execute(assinanteId: string, assinaturaId: string, destino: StatusAssinatura, agora = new Date()) {
+  async execute(assinanteId: string, assinaturaId: string, destino: StatusAssinatura, auditoria: ContextoAuditoria, agora = new Date()) {
     return this.db.$transaction(async (tx) => {
       const assinatura = await tx.assinatura.findUnique({
         where: { id_assinanteId: { id: assinaturaId, assinanteId } },
@@ -42,6 +43,15 @@ export class AlterarStatusAssinaturaService {
           await tx.ambienteTenant.update({ where: { id: ambiente.id }, data: { status: "ATIVO" } });
         }
       }
+
+      await tx.auditLogPlataforma.create({ data: {
+        ...auditoria,
+        assinanteId,
+        acao: "ASSINATURA_STATUS_ALTERADO",
+        alvoTipo: "ASSINATURA",
+        alvoId: assinatura.id,
+        mudancas: { statusAnterior: assinatura.status, status: destino, ambienteId: ambiente?.id ?? null },
+      } });
 
       return {
         assinaturaId: assinatura.id,

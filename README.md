@@ -59,6 +59,11 @@ transições comerciais explícitas. A resposta informa `ambienteId` e
 `exigeEnvioConcessao`; a entrega permanece um comando separado para que falha
 de rede não reverta a decisão comercial.
 
+Cadastro, contratação e transição de assinatura gravam `AuditLogPlataforma`
+na mesma transação da mudança. A trilha registra operador, origem, IP,
+dispositivo, ação, alvo e alterações sanitizadas, sem documento, e-mail,
+tokens ou credenciais.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por

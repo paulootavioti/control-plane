@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient, StatusAssinatura } from "@prisma/client";
+import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
 
 export interface DadosContratacao {
   planoVersaoId: string;
@@ -13,7 +14,7 @@ export interface DadosContratacao {
 export class ContratarAssinaturaService {
   constructor(private readonly db: PrismaClient) {}
 
-  async execute(assinanteId: string, dados: DadosContratacao, agora = new Date()) {
+  async execute(assinanteId: string, dados: DadosContratacao, auditoria: ContextoAuditoria, agora = new Date()) {
     if (dados.status === "TESTE" && (!dados.testeAte || dados.testeAte <= agora)) {
       throw new Error("PERIODO_TESTE_INVALIDO");
     }
@@ -39,7 +40,7 @@ export class ContratarAssinaturaService {
           throw new Error("PLANO_VERSAO_NAO_ELEGIVEL");
         }
 
-        return tx.assinatura.create({
+        const assinatura = await tx.assinatura.create({
           data: {
             assinanteId,
             planoVersaoId: planoVersao.id,
@@ -53,6 +54,15 @@ export class ContratarAssinaturaService {
           },
           select: { id: true, assinanteId: true, planoVersaoId: true, status: true, inicioEm: true, testeAte: true, diaVencimento: true },
         });
+        await tx.auditLogPlataforma.create({ data: {
+          ...auditoria,
+          assinanteId,
+          acao: "ASSINATURA_CONTRATADA",
+          alvoTipo: "ASSINATURA",
+          alvoId: assinatura.id,
+          mudancas: { status: assinatura.status, planoVersaoId: assinatura.planoVersaoId, diaVencimento: assinatura.diaVencimento },
+        } });
+        return assinatura;
       });
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") {

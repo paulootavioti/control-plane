@@ -10,6 +10,7 @@ import { CriarAssinanteService } from "./CriarAssinanteService";
 import { ContratarAssinaturaService } from "./ContratarAssinaturaService";
 import { assinaturaSchema } from "../comercial/regrasComerciais";
 import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService";
+import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 
 export const assinantesRoutes = Router();
 
@@ -50,7 +51,7 @@ assinantesRoutes.post(
     const validacao = novoAssinanteSchema.safeParse(request.body);
     if (!validacao.success) return response.status(400).json({ mensagem: "Dados do assinante inválidos." });
     try {
-      const resultado = await new CriarAssinanteService(prisma).execute(validacao.data);
+      const resultado = await new CriarAssinanteService(prisma).execute(validacao.data, contextoAuditoria(request, response));
       return response.status(201).json(resultado);
     } catch (erro) {
       if (erro instanceof Error && erro.message === "ASSINANTE_DUPLICADO") {
@@ -75,7 +76,7 @@ assinantesRoutes.patch(
     if (!ids.success || !dados.success) return response.status(400).json({ mensagem: "Transição inválida." });
     try {
       const resultado = await new AlterarStatusAssinaturaService(prisma).execute(
-        ids.data.assinanteId, ids.data.assinaturaId, dados.data.status,
+        ids.data.assinanteId, ids.data.assinaturaId, dados.data.status, contextoAuditoria(request, response),
       );
       return response.json(resultado);
     } catch (erro) {
@@ -127,7 +128,9 @@ assinantesRoutes.post(
     const dados = contratacaoSchema.safeParse(request.body);
     if (!assinanteId.success || !dados.success) return response.status(400).json({ mensagem: "Contratação inválida." });
     try {
-      const resultado = await new ContratarAssinaturaService(prisma).execute(assinanteId.data, dados.data);
+      const resultado = await new ContratarAssinaturaService(prisma).execute(
+        assinanteId.data, dados.data, contextoAuditoria(request, response),
+      );
       return response.status(201).json(resultado);
     } catch (erro) {
       if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Assinante não encontrado." });
