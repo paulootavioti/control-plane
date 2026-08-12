@@ -42,6 +42,10 @@ A função `provisionar-background` é protegida por
 Neon e do cofre de segredos estarem configurados e validados. Enquanto isso,
 a função não adquire nem altera eventos da fila.
 
+Operadores com perfil `OPERADOR` ou `ADMIN_PLATAFORMA` podem criar a
+solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
+apenas registra ambiente e evento; não habilita os adaptadores reais.
+
 ## Netlify
 
 Crie um site separado apontando o **base directory** para `control-plane`.

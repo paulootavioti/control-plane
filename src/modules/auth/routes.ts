@@ -2,17 +2,10 @@ import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 
 import { prisma } from "../../shared/prisma";
-import { conferirSenha, emitirToken, loginSchema, verificarToken } from "./regrasAuth";
+import { conferirSenha, emitirToken, loginSchema } from "./regrasAuth";
+import { autenticarOperador, segredoJwt } from "./autenticarOperador";
 
 export const authRoutes = Router();
-
-function segredoJwt(): string {
-  const segredo = process.env.CONTROL_PLANE_JWT_SECRET;
-  if (!segredo || segredo.length < 32) {
-    throw new Error("CONTROL_PLANE_JWT_SECRET precisa ter pelo menos 32 caracteres.");
-  }
-  return segredo;
-}
 
 authRoutes.post(
   "/login",
@@ -44,21 +37,7 @@ authRoutes.post(
   },
 );
 
-authRoutes.get("/me", async (request, response) => {
-  const authorization = request.headers.authorization;
-  if (!authorization?.startsWith("Bearer ")) {
-    return response.status(401).json({ mensagem: "Autenticação necessária." });
-  }
-
-  try {
-    const payload = verificarToken(authorization.slice(7), segredoJwt());
-    const operador = await prisma.operadorPlataforma.findUnique({ where: { id: payload.sub } });
-    if (!operador?.ativo || operador.versaoToken !== payload.versao) {
-      return response.status(401).json({ mensagem: "Sessão inválida." });
-    }
-
-    return response.json({ id: operador.id, nome: operador.nome, email: operador.email, perfil: operador.perfil });
-  } catch {
-    return response.status(401).json({ mensagem: "Sessão inválida." });
-  }
+authRoutes.get("/me", autenticarOperador(), async (_request, response) => {
+  const operador = response.locals.operador;
+  return response.json({ id: operador.id, nome: operador.nome, email: operador.email, perfil: operador.perfil });
 });
