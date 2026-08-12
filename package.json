@@ -19,6 +19,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1108.0",
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
