@@ -48,6 +48,34 @@ enum PerfilOperador {
   ADMIN_PLATAFORMA
 }
 
+enum StatusAmbienteTenant {
+  PENDENTE
+  CRIANDO_PROJETO
+  GRAVANDO_SEGREDO
+  APLICANDO_MIGRATIONS
+  EXECUTANDO_BOOTSTRAP
+  VALIDANDO
+  ATIVO
+  FALHOU
+  SUSPENSO
+  DESATIVADO
+}
+
+enum TipoEventoProvisionamento {
+  CRIAR_AMBIENTE
+  APLICAR_MIGRATIONS
+  ROTACIONAR_CREDENCIAL
+  SUSPENDER
+  REATIVAR
+}
+
+enum StatusEventoProvisionamento {
+  PENDENTE
+  EXECUTANDO
+  CONCLUIDO
+  FALHOU
+}
+
 model OperadorPlataforma {
   id            String         @id @default(uuid()) @db.Uuid
   nome          String
@@ -78,8 +106,62 @@ model Assinante {
   contatos    ContatoAssinante[]
   assinaturas Assinatura[]
   faturas     Fatura[]
+  ambiente    AmbienteTenant?
 
   @@index([status])
+}
+
+model AmbienteTenant {
+  id                       String                @id @default(uuid()) @db.Uuid
+  assinanteId              String                @unique @db.Uuid
+  tenantKey                String                @unique @db.Uuid
+  status                   StatusAmbienteTenant @default(PENDENTE)
+  provider                 String                @default("NEON")
+  regiao                   String
+  providerProjectId        String?               @unique
+  providerBranchId         String?
+  providerEndpointId       String?
+  databaseName             String?
+  roleName                 String?
+  postgresVersion          Int?
+  secretRef                String?
+  credentialVersion        Int?
+  schemaVersaoAtual        String?
+  schemaVersaoDesejada     String
+  ultimaMigrationEm        DateTime?
+  ultimoHealthCheckEm      DateTime?
+  ultimoBackupVerificadoEm DateTime?
+  ultimaRotacaoEm          DateTime?
+  criadoEm                 DateTime              @default(now())
+  atualizadoEm             DateTime              @updatedAt
+
+  assinante Assinante                 @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  eventos   EventoProvisionamento[]
+
+  @@index([status])
+  @@index([schemaVersaoAtual, schemaVersaoDesejada])
+}
+
+model EventoProvisionamento {
+  id               String                       @id @default(uuid()) @db.Uuid
+  ambienteTenantId String                       @db.Uuid
+  tipo             TipoEventoProvisionamento
+  chaveIdempotencia String                      @unique
+  status           StatusEventoProvisionamento @default(PENDENTE)
+  etapaAtual       String?
+  tentativas       Int                          @default(0)
+  payload          Json?
+  erroSanitizado   String?
+  iniciadoEm       DateTime?
+  concluidoEm      DateTime?
+  proximaTentativaEm DateTime?
+  criadoEm         DateTime                     @default(now())
+  atualizadoEm     DateTime                     @updatedAt
+
+  ambiente AmbienteTenant @relation(fields: [ambienteTenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, proximaTentativaEm])
+  @@index([ambienteTenantId, criadoEm])
 }
 
 model ContatoAssinante {
