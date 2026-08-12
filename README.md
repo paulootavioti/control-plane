@@ -38,6 +38,9 @@ Operadores autenticados consultam assinantes por `GET /api/assinantes`, com
 os filtros opcionais `busca`, `status`, `pagina` e `limite`. A resposta reúne
 somente metadados B2B, assinatura corrente, ambiente e total de licenças;
 nenhum dado operacional de alunos é lido pelo Control Plane.
+O detalhe fica em `GET /api/assinantes/:assinanteId` e limita o histórico às
+12 faturas mais recentes, sem retornar referências de segredo ou credenciais
+do ambiente.
 
 ## Worker de provisionamento
 
