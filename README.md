@@ -34,6 +34,11 @@ e execute `npm run seed:operator` uma única vez. Não há usuário ou senha pad
 O login usa `POST /api/auth/login` e a sessão pode ser consultada em
 `GET /api/auth/me`.
 
+Operadores autenticados consultam assinantes por `GET /api/assinantes`, com
+os filtros opcionais `busca`, `status`, `pagina` e `limite`. A resposta reúne
+somente metadados B2B, assinatura corrente, ambiente e total de licenças;
+nenhum dado operacional de alunos é lido pelo Control Plane.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
