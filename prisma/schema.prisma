@@ -8,5 +8,179 @@ datasource db {
   url      = env("CONTROL_PLANE_DATABASE_URL")
 }
 
-// Os modelos comerciais entram na próxima etapa. Este schema vazio torna
-// explícito que o Control Plane nunca usa o DATABASE_URL de uma academia.
+enum StatusAssinante {
+  PROSPECT
+  EM_PROVISIONAMENTO
+  ATIVO
+  SUSPENSO
+  CANCELADO
+  ERRO_PROVISIONAMENTO
+}
+
+enum TipoContatoAssinante {
+  PROPRIETARIO
+  ADMINISTRATIVO
+  FINANCEIRO
+  TECNICO
+}
+
+enum StatusAssinatura {
+  TESTE
+  ATIVA
+  INADIMPLENTE
+  SUSPENSA
+  CANCELADA
+}
+
+enum StatusFatura {
+  RASCUNHO
+  ABERTA
+  PAGA
+  VENCIDA
+  CANCELADA
+  ESTORNADA
+}
+
+model Assinante {
+  id            String           @id @default(uuid()) @db.Uuid
+  nomeFantasia  String
+  razaoSocial   String?
+  documento     String           @unique
+  emailCobranca String
+  telefone      String?
+  slug          String           @unique
+  status        StatusAssinante  @default(PROSPECT)
+  criadoEm      DateTime         @default(now())
+  atualizadoEm  DateTime         @updatedAt
+
+  contatos    ContatoAssinante[]
+  assinaturas Assinatura[]
+  faturas     Fatura[]
+
+  @@index([status])
+}
+
+model ContatoAssinante {
+  id           String                @id @default(uuid()) @db.Uuid
+  assinanteId  String                @db.Uuid
+  nome         String
+  email        String?
+  telefone     String?
+  tipo         TipoContatoAssinante
+  principal    Boolean               @default(false)
+  criadoEm     DateTime              @default(now())
+  atualizadoEm DateTime              @updatedAt
+
+  assinante Assinante @relation(fields: [assinanteId], references: [id], onDelete: Cascade)
+
+  @@index([assinanteId, tipo])
+}
+
+model Plano {
+  id           String        @id @default(uuid()) @db.Uuid
+  nome         String        @unique
+  descricao    String?
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+
+  versoes PlanoVersao[]
+}
+
+// Uma versão contratada nunca é alterada: mudanças comerciais criam uma nova
+// linha com versão maior. A regra será protegida também pela camada de serviço.
+model PlanoVersao {
+  id                       String       @id @default(uuid()) @db.Uuid
+  planoId                  String       @db.Uuid
+  versao                   Int
+  vigenteDesde             DateTime
+  vigenteAte               DateTime?
+  alunosPorBloco           Int
+  precoPorBlocoCentavos    Int
+  blocosMinimosPorUnidade  Int          @default(1)
+  moeda                    String       @default("BRL") @db.Char(3)
+  recursos                 Json
+  metadadosComerciais      Json?
+  criadoEm                 DateTime     @default(now())
+
+  plano       Plano        @relation(fields: [planoId], references: [id], onDelete: Restrict)
+  assinaturas Assinatura[]
+
+  @@unique([planoId, versao])
+  @@index([planoId, vigenteDesde])
+}
+
+model Assinatura {
+  id                                  String            @id @default(uuid()) @db.Uuid
+  assinanteId                         String            @db.Uuid
+  planoVersaoId                       String            @db.Uuid
+  status                              StatusAssinatura  @default(TESTE)
+  inicioEm                            DateTime           @default(now())
+  testeAte                            DateTime?
+  canceladaEm                         DateTime?
+  encerradaEm                         DateTime?
+  diaVencimento                       Int               @default(10)
+  alunosPorBlocoNegociado             Int?
+  precoPorBlocoCentavosNegociado      Int?
+  blocosMinimosPorUnidadeNegociado    Int?
+  politicaCobranca                    Json?
+  criadoEm                            DateTime           @default(now())
+  atualizadoEm                        DateTime           @updatedAt
+
+  assinante   Assinante    @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  planoVersao PlanoVersao  @relation(fields: [planoVersaoId], references: [id], onDelete: Restrict)
+  faturas     Fatura[]
+
+  @@index([assinanteId, status])
+  @@index([planoVersaoId])
+  @@unique([id, assinanteId])
+}
+
+model Fatura {
+  id                    String        @id @default(uuid()) @db.Uuid
+  assinanteId           String        @db.Uuid
+  assinaturaId          String        @db.Uuid
+  competencia           String        @db.VarChar(7)
+  vencimentoEm          DateTime
+  status                StatusFatura @default(RASCUNHO)
+  subtotalCentavos      Int
+  descontoCentavos      Int           @default(0)
+  acrescimoCentavos     Int           @default(0)
+  totalCentavos         Int
+  moeda                 String        @default("BRL") @db.Char(3)
+  planoSnapshot         Json
+  condicoesSnapshot     Json?
+  gateway               String?
+  gatewayFaturaId       String?       @unique
+  emitidaEm             DateTime?
+  pagaEm                DateTime?
+  canceladaEm           DateTime?
+  estornadaEm           DateTime?
+  criadoEm              DateTime      @default(now())
+  atualizadoEm          DateTime      @updatedAt
+
+  assinante  Assinante   @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  assinatura Assinatura  @relation(fields: [assinaturaId, assinanteId], references: [id, assinanteId], onDelete: Restrict)
+  itens      FaturaItem[]
+
+  @@unique([assinaturaId, competencia])
+  @@index([assinanteId, status])
+  @@index([vencimentoEm, status])
+}
+
+model FaturaItem {
+  id                       String   @id @default(uuid()) @db.Uuid
+  faturaId                 String   @db.Uuid
+  tenantUnidadeId          String
+  nomeUnidade              String
+  alunosAtivos             Int
+  alunosPorBloco           Int
+  blocosCobrados           Int
+  precoPorBlocoCentavos    Int
+  valorCentavos            Int
+  criadoEm                 DateTime @default(now())
+
+  fatura Fatura @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+
+  @@unique([faturaId, tenantUnidadeId])
+}

@@ -23,9 +23,9 @@ npm install
 npm run dev
 ```
 
-Os modelos comerciais serão adicionados ao `prisma/schema.prisma` na próxima
-etapa. Até lá, a URL é declarada para registrar explicitamente a fronteira do
-banco, mas a rota de health check não abre conexão.
+O schema comercial contém assinantes, contatos, planos versionados,
+assinaturas e faturas com memória de cálculo por unidade. A URL registra a
+fronteira exclusiva do banco; a rota de health check não abre conexão.
 
 ## Netlify
 
