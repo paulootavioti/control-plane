@@ -40,7 +40,9 @@ somente metadados B2B, assinatura corrente, ambiente e total de licenças;
 nenhum dado operacional de alunos é lido pelo Control Plane.
 O detalhe fica em `GET /api/assinantes/:assinanteId` e limita o histórico às
 12 faturas mais recentes, sem retornar referências de segredo ou credenciais
-do ambiente.
+do ambiente. Ele também retorna os 20 eventos de provisionamento mais recentes
+com erro sanitizado e o indicador `retomadaManualDisponivel`, sem payload ou
+chave de idempotência interna.
 
 `POST /api/assinantes`, restrito a `OPERADOR` e `ADMIN_PLATAFORMA`, cadastra
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem

@@ -37,6 +37,16 @@ export class ObterAssinanteService {
             ultimaMigrationEm: true, ultimoHealthCheckEm: true,
             ultimoBackupVerificadoEm: true, ultimaRotacaoEm: true,
             revisaoConcessao: true, ultimaConcessaoEmitidaEm: true,
+            eventos: {
+              take: 20,
+              orderBy: { criadoEm: "desc" },
+              select: {
+                id: true, tipo: true, status: true, etapaAtual: true,
+                tentativas: true, erroSanitizado: true, iniciadoEm: true,
+                concluidoEm: true, proximaTentativaEm: true, criadoEm: true,
+                atualizadoEm: true,
+              },
+            },
           },
         },
         assinaturas: {
@@ -70,9 +80,16 @@ export class ObterAssinanteService {
     });
 
     if (!assinante) throw new Error("ASSINANTE_NAO_ENCONTRADO");
-    const { assinaturas, faturas, ...dados } = assinante;
+    const { assinaturas, faturas, ambiente, ...dados } = assinante;
     return {
       ...dados,
+      ambiente: ambiente ? {
+        ...ambiente,
+        eventos: ambiente.eventos.map((evento) => ({
+          ...evento,
+          retomadaManualDisponivel: evento.status === "FALHOU" && evento.tentativas >= 5,
+        })),
+      } : null,
       assinatura: assinaturas[0] ?? null,
       faturas: faturas.map(({ _count, ...fatura }) => ({
         ...fatura,
