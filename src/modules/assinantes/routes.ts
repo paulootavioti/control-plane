@@ -7,6 +7,8 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { ListarAssinantesService } from "./ListarAssinantesService";
 import { ObterAssinanteService } from "./ObterAssinanteService";
 import { CriarAssinanteService } from "./CriarAssinanteService";
+import { ContratarAssinaturaService } from "./ContratarAssinaturaService";
+import { assinaturaSchema } from "../comercial/regrasComerciais";
 
 export const assinantesRoutes = Router();
 
@@ -80,3 +82,29 @@ assinantesRoutes.get("/:assinanteId", autenticarOperador(), async (request, resp
     throw erro;
   }
 });
+
+const contratacaoSchema = assinaturaSchema.extend({
+  planoVersaoId: z.string().uuid(),
+  status: z.enum(["TESTE", "ATIVA"]),
+  testeAte: z.coerce.date().optional(),
+}).strict();
+
+assinantesRoutes.post(
+  "/:assinanteId/assinaturas",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = contratacaoSchema.safeParse(request.body);
+    if (!assinanteId.success || !dados.success) return response.status(400).json({ mensagem: "Contratação inválida." });
+    try {
+      const resultado = await new ContratarAssinaturaService(prisma).execute(assinanteId.data, dados.data);
+      return response.status(201).json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      if (erro instanceof Error && ["ASSINANTE_NAO_ELEGIVEL", "ASSINATURA_CORRENTE_EXISTE", "PLANO_VERSAO_NAO_ELEGIVEL", "PERIODO_TESTE_INVALIDO"].includes(erro.message)) {
+        return response.status(409).json({ mensagem: "Assinante, plano ou período não elegível para contratação." });
+      }
+      throw erro;
+    }
+  },
+);

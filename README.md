@@ -50,6 +50,10 @@ inicia provisionamento implicitamente; essas operações permanecem separadas.
 usar `incluirHistorico=true` para consultar planos inativos e versões
 encerradas sem modificar o histórico comercial.
 
+`POST /api/assinantes/:assinanteId/assinaturas` contrata uma versão vigente
+para um prospect. O banco garante uma única assinatura corrente por assinante;
+provisionamento continua sendo solicitado em comando separado.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
