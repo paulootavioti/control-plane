@@ -54,6 +54,11 @@ encerradas sem modificar o histórico comercial.
 para um prospect. O banco garante uma única assinatura corrente por assinante;
 provisionamento continua sendo solicitado em comando separado.
 
+`PATCH /api/assinantes/:assinanteId/assinaturas/:assinaturaId/status` aplica
+transições comerciais explícitas. A resposta informa `ambienteId` e
+`exigeEnvioConcessao`; a entrega permanece um comando separado para que falha
+de rede não reverta a decisão comercial.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por

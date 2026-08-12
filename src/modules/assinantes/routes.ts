@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { StatusAssinante, TipoContatoAssinante } from "@prisma/client";
+import { StatusAssinante, StatusAssinatura, TipoContatoAssinante } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "../../shared/prisma";
@@ -9,6 +9,7 @@ import { ObterAssinanteService } from "./ObterAssinanteService";
 import { CriarAssinanteService } from "./CriarAssinanteService";
 import { ContratarAssinaturaService } from "./ContratarAssinaturaService";
 import { assinaturaSchema } from "../comercial/regrasComerciais";
+import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService";
 
 export const assinantesRoutes = Router();
 
@@ -54,6 +55,35 @@ assinantesRoutes.post(
     } catch (erro) {
       if (erro instanceof Error && erro.message === "ASSINANTE_DUPLICADO") {
         return response.status(409).json({ mensagem: "Documento ou slug já cadastrado." });
+      }
+      throw erro;
+    }
+  },
+);
+
+const alterarStatusAssinaturaSchema = z.object({
+  status: z.nativeEnum(StatusAssinatura).refine((status) => status !== "TESTE"),
+}).strict();
+
+assinantesRoutes.patch(
+  "/:assinanteId/assinaturas/:assinaturaId/status",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ids = z.object({ assinanteId: z.string().uuid(), assinaturaId: z.string().uuid() })
+      .safeParse(request.params);
+    const dados = alterarStatusAssinaturaSchema.safeParse(request.body);
+    if (!ids.success || !dados.success) return response.status(400).json({ mensagem: "Transição inválida." });
+    try {
+      const resultado = await new AlterarStatusAssinaturaService(prisma).execute(
+        ids.data.assinanteId, ids.data.assinaturaId, dados.data.status,
+      );
+      return response.json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINATURA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Assinatura não encontrada." });
+      }
+      if (erro instanceof Error && ["STATUS_JA_APLICADO", "TRANSICAO_INVALIDA"].includes(erro.message)) {
+        return response.status(409).json({ mensagem: "Transição de assinatura não permitida." });
       }
       throw erro;
     }
