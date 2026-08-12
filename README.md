@@ -46,6 +46,10 @@ do ambiente.
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
 
+`GET /api/planos` lista planos ativos e suas versões vigentes. Operadores podem
+usar `incluirHistorico=true` para consultar planos inativos e versões
+encerradas sem modificar o histórico comercial.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
