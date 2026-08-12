@@ -27,6 +27,13 @@ O schema comercial contém assinantes, contatos, planos versionados,
 assinaturas e faturas com memória de cálculo por unidade. A URL registra a
 fronteira exclusiva do banco; a rota de health check não abre conexão.
 
+## Operador inicial
+
+Depois de aplicar as migrations, defina as variáveis `CONTROL_PLANE_ADMIN_*`
+e execute `npm run seed:operator` uma única vez. Não há usuário ou senha padrão.
+O login usa `POST /api/auth/login` e a sessão pode ser consultada em
+`GET /api/auth/me`.
+
 ## Netlify
 
 Crie um site separado apontando o **base directory** para `control-plane`.

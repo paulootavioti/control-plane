@@ -41,6 +41,28 @@ enum StatusFatura {
   ESTORNADA
 }
 
+enum PerfilOperador {
+  OPERADOR
+  FINANCEIRO
+  SUPORTE
+  ADMIN_PLATAFORMA
+}
+
+model OperadorPlataforma {
+  id            String         @id @default(uuid()) @db.Uuid
+  nome          String
+  email         String         @unique
+  senhaHash     String
+  perfil        PerfilOperador
+  ativo         Boolean        @default(true)
+  versaoToken   Int            @default(1)
+  ultimoLoginEm DateTime?
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+
+  @@index([ativo, perfil])
+}
+
 model Assinante {
   id            String           @id @default(uuid()) @db.Uuid
   nomeFantasia  String
