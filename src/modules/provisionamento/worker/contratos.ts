@@ -15,6 +15,11 @@ export type InventarioProjeto = {
   postgresVersion: number;
 };
 
+export type SegredoTenantRegistrado = {
+  secretRef: string;
+  chavePublicaIntegracao: string;
+};
+
 export type EtapaConcluida =
   | "PROJETO_CRIADO"
   | "SEGREDO_GRAVADO"
@@ -24,7 +29,12 @@ export type EtapaConcluida =
 
 export interface InfraestruturaTenant {
   criarOuReconciliarProjeto(evento: EventoParaProcessar): Promise<InventarioProjeto>;
-  gravarOuValidarSegredo(evento: EventoParaProcessar, inventario: InventarioProjeto): Promise<string>;
+  // O adaptador gera o par Ed25519 e grava a chave privada junto às URLs do
+  // banco no cofre. Somente a referência e a chave pública retornam daqui.
+  gravarOuValidarSegredo(
+    evento: EventoParaProcessar,
+    inventario: InventarioProjeto,
+  ): Promise<SegredoTenantRegistrado>;
   aplicarMigrations(evento: EventoParaProcessar, secretRef: string): Promise<string>;
   executarBootstrap(evento: EventoParaProcessar, secretRef: string): Promise<void>;
   validarSaude(evento: EventoParaProcessar, secretRef: string): Promise<void>;
@@ -38,7 +48,7 @@ export interface RepositorioProvisionamento {
     eventoId: string,
     ambienteTenantId: string,
     etapa: EtapaConcluida,
-    dados?: Partial<InventarioProjeto> & { secretRef?: string; schemaVersaoAtual?: string },
+    dados?: Partial<InventarioProjeto> & Partial<SegredoTenantRegistrado> & { schemaVersaoAtual?: string },
   ): Promise<void>;
   concluir(eventoId: string, ambienteTenantId: string): Promise<void>;
   falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string): Promise<void>;

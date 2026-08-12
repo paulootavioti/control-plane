@@ -29,4 +29,11 @@ describe("inventário de provisionamento", () => {
     expect(erro).not.toContain("segredo");
     expect(erro).not.toContain("abc");
   });
+
+  it("remove chave privada PEM de uma falha", () => {
+    const erro = sanitizarErroProvisionamento(
+      new Error("Falhou -----BEGIN PRIVATE KEY-----\nsegredo\n-----END PRIVATE KEY----- ao gravar"),
+    );
+    expect(erro).toBe("Falhou [REDACTED] ao gravar");
+  });
 });

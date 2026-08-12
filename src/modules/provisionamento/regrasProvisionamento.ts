@@ -17,6 +17,7 @@ export const inventarioAmbienteSchema = z.object({
 });
 
 const SEGREDOS = [
+  /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,
   /postgres(?:ql)?:\/\/\S+/gi,
   /(?:password|senha|token|secret)\s*[=:]\s*\S+/gi,
   /Bearer\s+\S+/gi,

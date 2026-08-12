@@ -5,6 +5,7 @@ import {
   EventoParaProcessar,
   InventarioProjeto,
   RepositorioProvisionamento,
+  SegredoTenantRegistrado,
 } from "./contratos";
 
 const statusPorEtapa: Record<EtapaConcluida, StatusAmbienteTenant> = {
@@ -78,7 +79,7 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
     eventoId: string,
     ambienteTenantId: string,
     etapa: EtapaConcluida,
-    dados: Partial<InventarioProjeto> & { secretRef?: string; schemaVersaoAtual?: string } = {},
+    dados: Partial<InventarioProjeto> & Partial<SegredoTenantRegistrado> & { schemaVersaoAtual?: string } = {},
   ): Promise<void> {
     const ambienteData: Prisma.AmbienteTenantUpdateInput = {
       status: statusPorEtapa[etapa],
@@ -89,6 +90,7 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
       ...(dados.roleName && { roleName: dados.roleName }),
       ...(dados.postgresVersion && { postgresVersion: dados.postgresVersion }),
       ...(dados.secretRef && { secretRef: dados.secretRef, credentialVersion: 1 }),
+      ...(dados.chavePublicaIntegracao && { chavePublicaIntegracao: dados.chavePublicaIntegracao }),
       ...(dados.schemaVersaoAtual && { schemaVersaoAtual: dados.schemaVersaoAtual, ultimaMigrationEm: new Date() }),
       ...(etapa === "HEALTH_CHECK_VALIDADO" && { ultimoHealthCheckEm: new Date() }),
     };

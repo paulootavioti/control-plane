@@ -46,8 +46,21 @@ export class ExecutarProvisionamento {
       existente = existente ?? { ...inventario, secretRef: null };
       let secretRef = existente.secretRef;
       if (precisaExecutar(etapaAtual, "SEGREDO_GRAVADO")) {
-        secretRef = await this.infraestrutura.gravarOuValidarSegredo(evento, inventario);
-        await this.repositorio.concluirEtapa(evento.id, evento.ambienteTenantId, "SEGREDO_GRAVADO", { secretRef });
+        const segredo = await this.infraestrutura.gravarOuValidarSegredo(evento, inventario);
+        if (
+          !segredo.secretRef ||
+          !segredo.chavePublicaIntegracao.includes("-----BEGIN PUBLIC KEY-----") ||
+          segredo.chavePublicaIntegracao.includes("PRIVATE KEY")
+        ) {
+          throw new Error("Adaptador não registrou referência e chave pública válidas.");
+        }
+        secretRef = segredo.secretRef;
+        await this.repositorio.concluirEtapa(
+          evento.id,
+          evento.ambienteTenantId,
+          "SEGREDO_GRAVADO",
+          segredo,
+        );
         etapaAtual = "SEGREDO_GRAVADO";
       }
       if (!secretRef) throw new Error("Referência do segredo não encontrada para retomada.");

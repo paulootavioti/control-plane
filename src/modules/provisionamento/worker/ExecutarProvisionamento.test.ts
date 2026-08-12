@@ -29,7 +29,10 @@ function dependencias() {
       roleName: "runtime",
       postgresVersion: 16,
     }),
-    gravarOuValidarSegredo: vi.fn().mockResolvedValue("sysbelt/prod/tenants/tenant-1/database"),
+    gravarOuValidarSegredo: vi.fn().mockResolvedValue({
+      secretRef: "sysbelt/prod/tenants/tenant-1/database",
+      chavePublicaIntegracao: "-----BEGIN PUBLIC KEY-----\npublica\n-----END PUBLIC KEY-----\n",
+    }),
     aplicarMigrations: vi.fn().mockResolvedValue("20260812110000"),
     executarBootstrap: vi.fn(),
     validarSaude: vi.fn(),
@@ -43,6 +46,12 @@ describe("worker de provisionamento", () => {
     await new ExecutarProvisionamento(repositorio, infraestrutura).execute(evento);
 
     expect(repositorio.concluirEtapa).toHaveBeenCalledTimes(5);
+    expect(repositorio.concluirEtapa).toHaveBeenNthCalledWith(
+      2, "evento-1", "ambiente-1", "SEGREDO_GRAVADO", {
+        secretRef: "sysbelt/prod/tenants/tenant-1/database",
+        chavePublicaIntegracao: "-----BEGIN PUBLIC KEY-----\npublica\n-----END PUBLIC KEY-----\n",
+      },
+    );
     expect(repositorio.concluirEtapa).toHaveBeenNthCalledWith(
       5, "evento-1", "ambiente-1", "HEALTH_CHECK_VALIDADO",
     );
@@ -88,5 +97,18 @@ describe("worker de provisionamento", () => {
     expect(repositorio.falhar).toHaveBeenCalledWith(
       "evento-1", "ambiente-1", "Falha em [REDACTED] [REDACTED]",
     );
+  });
+
+  it("não conclui a etapa quando o adaptador omite a chave pública", async () => {
+    const { repositorio, infraestrutura } = dependencias();
+    vi.mocked(infraestrutura.gravarOuValidarSegredo).mockResolvedValue({
+      secretRef: "secret-ref",
+      chavePublicaIntegracao: "",
+    });
+
+    await expect(new ExecutarProvisionamento(repositorio, infraestrutura).execute(evento))
+      .rejects.toThrow("chave pública válidas");
+    expect(repositorio.concluirEtapa).toHaveBeenCalledTimes(1);
+    expect(repositorio.falhar).toHaveBeenCalledOnce();
   });
 });
