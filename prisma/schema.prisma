@@ -191,6 +191,8 @@ model AmbienteTenant {
   ultimoHealthCheckEm      DateTime?
   ultimoBackupVerificadoEm DateTime?
   ultimaRotacaoEm          DateTime?
+  revisaoConcessao         Int                   @default(0)
+  ultimaConcessaoEmitidaEm DateTime?
   criadoEm                 DateTime              @default(now())
   atualizadoEm             DateTime              @updatedAt
 

@@ -46,6 +46,10 @@ Operadores com perfil `OPERADOR` ou `ADMIN_PLATAFORMA` podem criar a
 solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
 apenas registra ambiente e evento; não habilita os adaptadores reais.
 
+Concessões são emitidas com revisão atômica e validade de 24 horas usando
+`CONTROL_PLANE_GRANT_PRIVATE_KEY`. A chave pública correspondente é a única
+parte configurada nos Tenant Planes.
+
 ## Netlify
 
 Crie um site separado apontando o **base directory** para `control-plane`.
