@@ -66,6 +66,12 @@ na mesma transação da mudança. A trilha registra operador, origem, IP,
 dispositivo, ação, alvo e alterações sanitizadas, sem documento, e-mail,
 tokens ou credenciais.
 
+Operadores financeiros e administradores geram um rascunho idempotente por
+`POST /api/faturas/gerar`, informando assinante e competência. O cálculo usa o
+snapshot agregado mais recente do mês, cobra somente licenças ativas, aplica o
+mínimo por unidade e congela preços e memória de cálculo. Sem snapshot, nenhuma
+estimativa ou fatura é criada.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
