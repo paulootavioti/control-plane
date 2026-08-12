@@ -103,7 +103,10 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
 
   async concluir(eventoId: string, ambienteTenantId: string): Promise<void> {
     await this.db.$transaction([
-      this.db.ambienteTenant.update({ where: { id: ambienteTenantId }, data: { status: "ATIVO" } }),
+      this.db.ambienteTenant.update({
+        where: { id: ambienteTenantId },
+        data: { status: "ATIVO", assinante: { update: { status: "ATIVO" } } },
+      }),
       this.db.eventoProvisionamento.update({
         where: { id: eventoId }, data: { status: "CONCLUIDO", concluidoEm: new Date() },
       }),
@@ -120,7 +123,15 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
       : null;
 
     await this.db.$transaction([
-      this.db.ambienteTenant.update({ where: { id: ambienteTenantId }, data: { status: "FALHOU" } }),
+      this.db.ambienteTenant.update({
+        where: { id: ambienteTenantId },
+        data: {
+          status: "FALHOU",
+          ...(evento.tentativas >= 5 && {
+            assinante: { update: { status: "ERRO_PROVISIONAMENTO" } },
+          }),
+        },
+      }),
       this.db.eventoProvisionamento.update({
         where: { id: eventoId },
         data: { status: "FALHOU", erroSanitizado, proximaTentativaEm },

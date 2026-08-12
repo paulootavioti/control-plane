@@ -72,6 +72,11 @@ A função `provisionar-background` é protegida por
 Neon e do cofre de segredos estarem configurados e validados. Enquanto isso,
 a função não adquire nem altera eventos da fila.
 
+Ao concluir todas as etapas, o worker ativa ambiente e assinante na mesma
+transação. Falhas temporárias permanecem disponíveis para retomada; somente o
+esgotamento das cinco tentativas muda o assinante para
+`ERRO_PROVISIONAMENTO`.
+
 Operadores com perfil `OPERADOR` ou `ADMIN_PLATAFORMA` podem criar a
 solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
 exige uma assinatura corrente em teste ou ativa e registra ambiente, evento e
