@@ -76,6 +76,12 @@ enum StatusEventoProvisionamento {
   FALHOU
 }
 
+enum StatusLicencaUnidade {
+  PENDENTE
+  ATIVA
+  ENCERRADA
+}
+
 model OperadorPlataforma {
   id            String         @id @default(uuid()) @db.Uuid
   nome          String
@@ -107,8 +113,60 @@ model Assinante {
   assinaturas Assinatura[]
   faturas     Fatura[]
   ambiente    AmbienteTenant?
+  licencas    LicencaUnidade[]
+  snapshotsContagem SnapshotContagem[]
 
   @@index([status])
+}
+
+model LicencaUnidade {
+  id                       String               @id @default(uuid()) @db.Uuid
+  assinanteId              String               @db.Uuid
+  tenantUnidadeId          String
+  nomeExibicao             String
+  status                   StatusLicencaUnidade @default(PENDENTE)
+  inicioCobrancaEm         DateTime?
+  encerramentoCobrancaEm   DateTime?
+  ultimaSincronizacaoEm    DateTime?
+  criadoEm                 DateTime             @default(now())
+  atualizadoEm             DateTime             @updatedAt
+
+  assinante Assinante @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  contagens SnapshotContagemItem[]
+
+  @@unique([assinanteId, tenantUnidadeId])
+  @@unique([id, assinanteId])
+  @@index([assinanteId, status])
+}
+
+model SnapshotContagem {
+  id               String   @id @default(uuid()) @db.Uuid
+  assinanteId      String   @db.Uuid
+  eventoExternoId  String
+  versaoContrato   Int      @default(1)
+  dataCorte        DateTime
+  recebidoEm       DateTime @default(now())
+
+  assinante Assinante              @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  itens      SnapshotContagemItem[]
+
+  @@unique([assinanteId, eventoExternoId])
+  @@unique([id, assinanteId])
+  @@index([assinanteId, dataCorte])
+}
+
+model SnapshotContagemItem {
+  id                 String @id @default(uuid()) @db.Uuid
+  snapshotId         String @db.Uuid
+  assinanteId        String @db.Uuid
+  licencaUnidadeId   String @db.Uuid
+  alunosAtivos       Int
+
+  snapshot SnapshotContagem @relation(fields: [snapshotId, assinanteId], references: [id, assinanteId], onDelete: Cascade)
+  licenca  LicencaUnidade   @relation(fields: [licencaUnidadeId, assinanteId], references: [id, assinanteId], onDelete: Restrict)
+
+  @@unique([snapshotId, licencaUnidadeId])
+  @@index([licencaUnidadeId])
 }
 
 model AmbienteTenant {
