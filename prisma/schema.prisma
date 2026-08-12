@@ -183,6 +183,7 @@ model AmbienteTenant {
   roleName                 String?
   postgresVersion          Int?
   secretRef                String?
+  chavePublicaIntegracao   String?
   credentialVersion        Int?
   schemaVersaoAtual        String?
   schemaVersaoDesejada     String

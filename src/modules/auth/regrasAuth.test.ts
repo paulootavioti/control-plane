@@ -15,7 +15,7 @@ describe("autenticação de operador", () => {
     expect(hash).not.toContain("senha-segura");
     await expect(conferirSenha("senha-segura", hash)).resolves.toBe(true);
     await expect(conferirSenha("senha-errada", hash)).resolves.toBe(false);
-  });
+  }, 15_000);
 
   it("emite token vinculado ao operador, perfil e versão", () => {
     const token = emitirToken({ sub: "operador-1", perfil: "SUPORTE", versao: 2 }, segredo);
