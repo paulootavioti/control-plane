@@ -6,6 +6,7 @@ import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { prisma } from "../../shared/prisma";
 import { SolicitarProvisionamento } from "./SolicitarProvisionamento";
 import { RetomarProvisionamentoService } from "./RetomarProvisionamentoService";
+import { ListarEventosProvisionamentoService } from "./ListarEventosProvisionamentoService";
 
 export const provisionamentoRoutes = Router();
 
@@ -14,6 +15,33 @@ const solicitacaoSchema = z.object({
   regiao: z.string().regex(/^[a-z0-9-]{2,80}$/),
   schemaVersaoDesejada: z.string().trim().min(1).max(100),
 }).strict();
+
+const filtrosEventosSchema = z.object({
+  assinanteId: z.string().uuid().optional(),
+  status: z.enum(["PENDENTE", "EXECUTANDO", "CONCLUIDO", "FALHOU"]).optional(),
+  tipo: z.enum([
+    "CRIAR_AMBIENTE", "APLICAR_MIGRATIONS", "ROTACIONAR_CREDENCIAL",
+    "SUSPENDER", "REATIVAR",
+  ]).optional(),
+  inicio: z.coerce.date().optional(),
+  fim: z.coerce.date().optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict().refine(({ inicio, fim }) => !inicio || !fim || inicio <= fim, {
+  message: "Período inválido.", path: ["fim"],
+});
+
+provisionamentoRoutes.get(
+  "/eventos",
+  autenticarOperador(["OPERADOR", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = filtrosEventosSchema.safeParse(request.query);
+    if (!filtros.success) {
+      return response.status(400).json({ mensagem: "Filtros de provisionamento inválidos." });
+    }
+    return response.json(await new ListarEventosProvisionamentoService(prisma).execute(filtros.data));
+  },
+);
 
 provisionamentoRoutes.post(
   "/solicitacoes",

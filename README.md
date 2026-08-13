@@ -161,6 +161,13 @@ solicitação idempotente por `POST /api/provisionamento/solicitacoes`. A rota
 exige uma assinatura corrente em teste ou ativa e registra ambiente, evento e
 auditoria na mesma transação; ela não habilita os adaptadores reais.
 
+Operadores, suporte e administradores consultam a fila global por
+`GET /api/provisionamento/eventos`, com paginação e filtros por assinante,
+status, tipo e período. A resposta informa quando a retomada manual está
+disponível e traz somente o contexto operacional mínimo do ambiente e do
+assinante; payload, chave de idempotência, referência de segredo e chave
+pública nunca são selecionados.
+
 Concessões são emitidas com revisão atômica e validade de 24 horas usando
 `CONTROL_PLANE_GRANT_PRIVATE_KEY`. A chave pública correspondente é a única
 parte configurada nos Tenant Planes.
