@@ -10,7 +10,7 @@ import { ListarPlanosService } from "./ListarPlanosService";
 
 export const planosRoutes = Router();
 
-const novoPlanoSchema = z.object({
+const planoSchemaBase = z.object({
   nome: z.string().trim().min(2).max(120),
   descricao: z.string().trim().min(1).max(500).optional(),
   vigenteDesde: z.coerce.date(),
@@ -21,8 +21,13 @@ const novoPlanoSchema = z.object({
   moeda: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default("BRL"),
   recursos: z.record(z.string().min(1).max(100), z.boolean()),
   metadadosComerciais: z.record(z.string().min(1).max(100), z.json()).nullable().optional(),
-}).strict().refine(
-  ({ vigenteDesde, vigenteAte }) => !vigenteAte || vigenteAte > vigenteDesde,
+}).strict();
+
+const validarVigencia = <T extends { vigenteDesde: Date; vigenteAte?: Date | null }>(dados: T) =>
+  !dados.vigenteAte || dados.vigenteAte > dados.vigenteDesde;
+
+const novoPlanoSchema = planoSchemaBase.refine(
+  validarVigencia,
   { message: "A vigência final precisa ser posterior à inicial.", path: ["vigenteAte"] },
 );
 
@@ -44,7 +49,10 @@ planosRoutes.post("/", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request,
   }
 });
 
-const novaVersaoSchema = novoPlanoSchema.omit({ nome: true, descricao: true });
+const novaVersaoSchema = planoSchemaBase.omit({ nome: true, descricao: true }).refine(
+  validarVigencia,
+  { message: "A vigência final precisa ser posterior à inicial.", path: ["vigenteAte"] },
+);
 
 planosRoutes.post("/:planoId/versoes", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
   const parametros = z.object({ planoId: z.uuid() }).safeParse(request.params);
