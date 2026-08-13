@@ -180,6 +180,12 @@ combinado com o período. A resposta contém apenas identificação, estado, dat
 de cobrança e última sincronização, junto ao assinante mínimo; nenhum aluno,
 documento, e-mail, segredo ou credencial é selecionado.
 
+Os mesmos perfis consultam `GET /api/integracao/licencas/:licencaId` para ver o
+detalhe comercial e operacional da licença, o assinante mínimo e as últimas 12
+contagens agregadas da unidade. O histórico informa snapshot, evento, data de
+corte e alunos ativos, sem consultar alunos individuais, documento, e-mail,
+segredos ou credenciais.
+
 Após revisão, `POST /api/faturas/:faturaId/emitir` faz a transição idempotente
 de `RASCUNHO` para `ABERTA`, registra a data e a auditoria na mesma transação.
 A emissão comercial não chama gateway neste passo; cobrança externa e webhooks

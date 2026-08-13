@@ -8,6 +8,7 @@ import { ReceberSnapshotContagem } from "./ReceberSnapshotContagem";
 import { ListarSnapshotsContagemService } from "./ListarSnapshotsContagemService";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { ListarLicencasUnidadeService } from "./ListarLicencasUnidadeService";
+import { ObterLicencaUnidadeService } from "./ObterLicencaUnidadeService";
 
 export const integracaoRoutes = Router();
 
@@ -47,6 +48,23 @@ integracaoRoutes.get(
     const filtros = filtrosLicencasSchema.safeParse(request.query);
     if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de licenças inválidos." });
     return response.json(await new ListarLicencasUnidadeService(prisma).execute(filtros.data));
+  },
+);
+
+integracaoRoutes.get(
+  "/licencas/:licencaId",
+  autenticarOperador(["OPERADOR", "FINANCEIRO", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const licencaId = z.string().uuid().safeParse(request.params.licencaId);
+    if (!licencaId.success) return response.status(400).json({ mensagem: "Licença inválida." });
+    try {
+      return response.json(await new ObterLicencaUnidadeService(prisma).execute(licencaId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "LICENCA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Licença não encontrada." });
+      }
+      throw erro;
+    }
   },
 );
 
