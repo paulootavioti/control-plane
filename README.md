@@ -59,6 +59,13 @@ do ambiente. Ele também retorna os 20 eventos de provisionamento mais recentes
 com erro sanitizado e o indicador `retomadaManualDisponivel`, sem payload ou
 chave de idempotência interna.
 
+Contatos existentes são mantidos por
+`PATCH /api/assinantes/:assinanteId/contatos/:contatoId` e removidos por
+`DELETE` na mesma URL, ambos restritos a operadores e administradores. Promover
+um contato a principal desmarca os demais na mesma transação; remover o contato
+principal não elege outro implicitamente. A auditoria registra apenas os campos
+alterados e metadados, sem copiar e-mail ou telefone em claro.
+
 O inventário B2B em `GET /api/assinaturas` oferece paginação e filtros por
 assinante, plano, status, nome/slug e períodos de teste ou encerramento. A
 resposta limita o assinante à identificação mínima e traz versão do plano,

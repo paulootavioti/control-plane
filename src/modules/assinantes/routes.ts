@@ -12,8 +12,62 @@ import { assinaturaSchema } from "../comercial/regrasComerciais";
 import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { TrocarPlanoAssinaturaService } from "./TrocarPlanoAssinaturaService";
+import { GerenciarContatoService } from "./GerenciarContatoService";
 
 export const assinantesRoutes = Router();
+
+const idsContatoSchema = z.object({
+  assinanteId: z.string().uuid(),
+  contatoId: z.string().uuid(),
+}).strict();
+
+const atualizarContatoSchema = z.object({
+  nome: z.string().trim().min(2).max(120).optional(),
+  email: z.string().trim().email().max(254).transform((valor) => valor.toLowerCase()).nullable().optional(),
+  telefone: z.string().trim().min(8).max(30).nullable().optional(),
+  tipo: z.nativeEnum(TipoContatoAssinante).optional(),
+  principal: z.boolean().optional(),
+}).strict().refine((dados) => Object.keys(dados).length > 0, { message: "Informe ao menos uma alteração." });
+
+assinantesRoutes.patch(
+  "/:assinanteId/contatos/:contatoId",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ids = idsContatoSchema.safeParse(request.params);
+    const dados = atualizarContatoSchema.safeParse(request.body);
+    if (!ids.success || !dados.success) return response.status(400).json({ mensagem: "Alteração de contato inválida." });
+    try {
+      return response.json(await new GerenciarContatoService(prisma).atualizar(
+        ids.data.assinanteId, ids.data.contatoId, dados.data, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "CONTATO_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Contato não encontrado." });
+      }
+      throw erro;
+    }
+  },
+);
+
+assinantesRoutes.delete(
+  "/:assinanteId/contatos/:contatoId",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ids = idsContatoSchema.safeParse(request.params);
+    if (!ids.success) return response.status(400).json({ mensagem: "Contato inválido." });
+    try {
+      await new GerenciarContatoService(prisma).remover(
+        ids.data.assinanteId, ids.data.contatoId, contextoAuditoria(request, response),
+      );
+      return response.status(204).send();
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "CONTATO_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Contato não encontrado." });
+      }
+      throw erro;
+    }
+  },
+);
 
 const filtrosSchema = z.object({
   busca: z.string().trim().min(1).max(120).optional(),
