@@ -118,6 +118,13 @@ na mesma transação da mudança. A trilha registra operador, origem, IP,
 dispositivo, ação, alvo e alterações sanitizadas, sem documento, e-mail,
 tokens ou credenciais.
 
+Operadores e administradores editam os dados comerciais por
+`PATCH /api/assinantes/:assinanteId`. O comando parcial aceita somente nome,
+razão social, documento, e-mail de cobrança, telefone e slug, é idempotente e
+não altera status, contatos, assinatura ou ambiente. Documento, e-mail e
+telefone nunca são copiados em claro para a auditoria, que registra apenas que
+esses campos foram alterados.
+
 Administradores da plataforma consultam `GET /api/auditoria`, com paginação e
 filtros por assinante, operador, ação, alvo e período. A resposta inclui IP e
 dispositivo para investigação, mas não seleciona e-mail do operador, senha,
