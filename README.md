@@ -64,6 +64,11 @@ do ambiente. Ele também retorna os 20 eventos de provisionamento mais recentes
 com erro sanitizado e o indicador `retomadaManualDisponivel`, sem payload ou
 chave de idempotência interna.
 
+`GET /api/provisionamento/eventos/:eventoId` detalha o diagnóstico sanitizado,
+as tentativas, as datas, o ambiente seguro e o assinante mínimo. A consulta
+informa se há retomada manual, sem selecionar payload, chave de idempotência,
+identificadores do provedor, segredo, chave pública ou credenciais do banco.
+
 Contatos existentes são mantidos por
 `PATCH /api/assinantes/:assinanteId/contatos/:contatoId` e removidos por
 `DELETE` na mesma URL, ambos restritos a operadores e administradores. Promover
