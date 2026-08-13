@@ -178,6 +178,14 @@ disponível e traz somente o contexto operacional mínimo do ambiente e do
 assinante; payload, chave de idempotência, referência de segredo e chave
 pública nunca são selecionados.
 
+Os mesmos perfis consultam o inventário por
+`GET /api/provisionamento/ambientes`, com paginação e filtros por assinante,
+status, provedor, região e divergência de schema. A resposta reúne versões,
+datas de saúde, backup, migração e rotação, além do último evento e dos
+indicadores de atenção e retomada. Identificadores do provedor e do banco,
+credenciais, referências de segredo e dados comerciais sensíveis do assinante
+não são selecionados.
+
 Concessões são emitidas com revisão atômica e validade de 24 horas usando
 `CONTROL_PLANE_GRANT_PRIVATE_KEY`. A chave pública correspondente é a única
 parte configurada nos Tenant Planes.
