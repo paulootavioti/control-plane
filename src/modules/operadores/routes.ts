@@ -7,8 +7,39 @@ import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { CriarOperadorService } from "./CriarOperadorService";
 import { ListarOperadoresService } from "./ListarOperadoresService";
+import { AlterarStatusOperadorService } from "./AlterarStatusOperadorService";
 
 export const operadoresRoutes = Router();
+
+const alterarStatusSchema = z.object({ ativo: z.boolean() }).strict();
+
+operadoresRoutes.patch(
+  "/:operadorId/status",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const operadorId = z.string().uuid().safeParse(request.params.operadorId);
+    const dados = alterarStatusSchema.safeParse(request.body);
+    if (!operadorId.success || !dados.success) {
+      return response.status(400).json({ mensagem: "Alteração de operador inválida." });
+    }
+    try {
+      return response.json(await new AlterarStatusOperadorService(prisma).execute(
+        operadorId.data, dados.data.ativo, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "OPERADOR_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Operador não encontrado." });
+      }
+      if (erro instanceof Error && erro.message === "AUTODESATIVACAO_NAO_PERMITIDA") {
+        return response.status(409).json({ mensagem: "Não é permitido desativar o próprio operador." });
+      }
+      if (erro instanceof Error && erro.message === "ULTIMO_ADMIN_ATIVO") {
+        return response.status(409).json({ mensagem: "A plataforma precisa manter um administrador ativo." });
+      }
+      throw erro;
+    }
+  },
+);
 
 const filtrosOperadoresSchema = z.object({
   busca: z.string().trim().min(1).max(120).optional(),
