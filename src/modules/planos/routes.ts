@@ -5,6 +5,7 @@ import { prisma } from "../../shared/prisma";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { CriarPlanoService } from "./CriarPlanoService";
+import { CriarVersaoPlanoService } from "./CriarVersaoPlanoService";
 import { ListarPlanosService } from "./ListarPlanosService";
 
 export const planosRoutes = Router();
@@ -38,6 +39,36 @@ planosRoutes.post("/", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request,
   } catch (erro) {
     if (erro instanceof Error && erro.message === "PLANO_DUPLICADO") {
       return response.status(409).json({ mensagem: "Já existe um plano com este nome." });
+    }
+    throw erro;
+  }
+});
+
+const novaVersaoSchema = novoPlanoSchema.omit({ nome: true, descricao: true });
+
+planosRoutes.post("/:planoId/versoes", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+  const parametros = z.object({ planoId: z.uuid() }).safeParse(request.params);
+  const dados = novaVersaoSchema.safeParse(request.body);
+  if (!parametros.success || !dados.success) {
+    return response.status(400).json({ mensagem: "Dados da versão do plano inválidos." });
+  }
+
+  try {
+    const resultado = await new CriarVersaoPlanoService(prisma).execute(
+      parametros.data.planoId,
+      dados.data,
+      contextoAuditoria(request, response),
+    );
+    return response.status(resultado.criada ? 201 : 200).json(resultado);
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "PLANO_NAO_ENCONTRADO") {
+      return response.status(404).json({ mensagem: "Plano não encontrado." });
+    }
+    if (erro instanceof Error && erro.message === "PLANO_INATIVO") {
+      return response.status(409).json({ mensagem: "Não é possível versionar um plano inativo." });
+    }
+    if (erro instanceof Error && ["VIGENCIA_CONFLITANTE", "VIGENCIA_SOBREPOSTA", "VERSAO_CONCORRENTE"].includes(erro.message)) {
+      return response.status(409).json({ mensagem: "A vigência informada conflita com o histórico do plano." });
     }
     throw erro;
   }
