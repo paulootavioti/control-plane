@@ -8,6 +8,7 @@ import { concessaoRoutes } from "./modules/concessao/routes";
 import { assinantesRoutes } from "./modules/assinantes/routes";
 import { planosRoutes } from "./modules/planos/routes";
 import { faturasRoutes } from "./modules/faturas/routes";
+import { auditoriaRoutes } from "./modules/auditoria/routes";
 
 export const app = express();
 
@@ -22,6 +23,7 @@ app.use("/concessoes", concessaoRoutes);
 app.use("/assinantes", assinantesRoutes);
 app.use("/planos", planosRoutes);
 app.use("/faturas", faturasRoutes);
+app.use("/auditoria", auditoriaRoutes);
 
 app.get("/health", (_request, response) => {
   response.status(200).json({

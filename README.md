@@ -66,6 +66,11 @@ na mesma transação da mudança. A trilha registra operador, origem, IP,
 dispositivo, ação, alvo e alterações sanitizadas, sem documento, e-mail,
 tokens ou credenciais.
 
+Administradores da plataforma consultam `GET /api/auditoria`, com paginação e
+filtros por assinante, operador, ação, alvo e período. A resposta inclui IP e
+dispositivo para investigação, mas não seleciona e-mail do operador, senha,
+documento, e-mail de cobrança, token ou referência de segredo.
+
 Operadores financeiros e administradores geram um rascunho idempotente por
 `POST /api/faturas/gerar`, informando assinante e competência. O cálculo usa o
 snapshot agregado mais recente do mês, cobra somente licenças ativas, aplica o
