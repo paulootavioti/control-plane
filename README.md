@@ -49,6 +49,11 @@ sessões anteriores e audita somente os valores alterados. É permitido editar o
 próprio nome/e-mail, mas não rebaixar o próprio perfil nem o último
 administrador ativo.
 
+`GET /api/operadores/:operadorId`, também exclusivo de administradores, retorna
+o perfil do operador e suas 20 ações auditadas mais recentes. O total de ações
+é informado sem selecionar hash de senha, versão de sessão, mudanças livres,
+IP ou dispositivo da auditoria.
+
 Operadores autenticados consultam assinantes por `GET /api/assinantes`, com
 os filtros opcionais `busca`, `status`, `pagina` e `limite`. A resposta reúne
 somente metadados B2B, assinatura corrente, ambiente e total de licenças;

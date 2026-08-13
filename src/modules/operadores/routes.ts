@@ -10,6 +10,7 @@ import { ListarOperadoresService } from "./ListarOperadoresService";
 import { AlterarStatusOperadorService } from "./AlterarStatusOperadorService";
 import { RedefinirSenhaOperadorService } from "./RedefinirSenhaOperadorService";
 import { AtualizarOperadorService } from "./AtualizarOperadorService";
+import { ObterOperadorService } from "./ObterOperadorService";
 
 export const operadoresRoutes = Router();
 
@@ -105,6 +106,23 @@ operadoresRoutes.get(
     const filtros = filtrosOperadoresSchema.safeParse(request.query);
     if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de operadores inválidos." });
     return response.json(await new ListarOperadoresService(prisma).execute(filtros.data));
+  },
+);
+
+operadoresRoutes.get(
+  "/:operadorId",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const operadorId = z.string().uuid().safeParse(request.params.operadorId);
+    if (!operadorId.success) return response.status(400).json({ mensagem: "Operador inválido." });
+    try {
+      return response.json(await new ObterOperadorService(prisma).execute(operadorId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "OPERADOR_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Operador não encontrado." });
+      }
+      throw erro;
+    }
   },
 );
 
