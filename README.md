@@ -85,6 +85,11 @@ O detalhe não consulta nem expõe alunos individuais ou credenciais do tenant.
 faturas em `RASCUNHO` ou `ABERTA`. A operação é idempotente, protegida contra
 concorrência e auditada; faturas pagas, vencidas ou estornadas são preservadas.
 
+`POST /api/faturas/:faturaId/pagar` registra pagamento de fatura `ABERTA` ou
+`VENCIDA`, com gateway e referência única. Repetir a mesma confirmação é
+idempotente; referências reutilizadas ou uma segunda baixa são recusadas. A
+regularização da assinatura permanece uma decisão separada do próximo fluxo.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
