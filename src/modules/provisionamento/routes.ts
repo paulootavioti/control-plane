@@ -8,6 +8,7 @@ import { SolicitarProvisionamento } from "./SolicitarProvisionamento";
 import { RetomarProvisionamentoService } from "./RetomarProvisionamentoService";
 import { ListarEventosProvisionamentoService } from "./ListarEventosProvisionamentoService";
 import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
+import { ObterAmbienteTenantService } from "./ObterAmbienteTenantService";
 
 export const provisionamentoRoutes = Router();
 
@@ -55,6 +56,23 @@ provisionamentoRoutes.get(
       return response.status(400).json({ mensagem: "Filtros de ambientes inválidos." });
     }
     return response.json(await new ListarAmbientesTenantService(prisma).execute(filtros.data));
+  },
+);
+
+provisionamentoRoutes.get(
+  "/ambientes/:ambienteId",
+  autenticarOperador(["OPERADOR", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ambienteId = z.string().uuid().safeParse(request.params.ambienteId);
+    if (!ambienteId.success) return response.status(400).json({ mensagem: "Ambiente inválido." });
+    try {
+      return response.json(await new ObterAmbienteTenantService(prisma).execute(ambienteId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Ambiente não encontrado." });
+      }
+      throw erro;
+    }
   },
 );
 

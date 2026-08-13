@@ -264,6 +264,12 @@ indicadores de atenção e retomada. Identificadores do provedor e do banco,
 credenciais, referências de segredo e dados comerciais sensíveis do assinante
 não são selecionados.
 
+`GET /api/provisionamento/ambientes/:ambienteId` detalha estado, saúde, schema
+e datas do ambiente, o assinante mínimo e seus 20 eventos mais recentes. A
+consulta usa seleção explícita e nunca lê identificadores internos do
+provedor, nomes ou papéis de banco, segredo, chave pública, payload ou chave
+de idempotência.
+
 Concessões são emitidas com revisão atômica e validade de 24 horas usando
 `CONTROL_PLANE_GRANT_PRIVATE_KEY`. A chave pública correspondente é a única
 parte configurada nos Tenant Planes.
