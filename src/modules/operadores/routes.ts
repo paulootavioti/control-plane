@@ -9,8 +9,32 @@ import { CriarOperadorService } from "./CriarOperadorService";
 import { ListarOperadoresService } from "./ListarOperadoresService";
 import { AlterarStatusOperadorService } from "./AlterarStatusOperadorService";
 import { RedefinirSenhaOperadorService } from "./RedefinirSenhaOperadorService";
+import { AtualizarOperadorService } from "./AtualizarOperadorService";
 
 export const operadoresRoutes = Router();
+
+const atualizarOperadorSchema = z.object({
+  nome: z.string().trim().min(2).max(120),
+  email: z.string().trim().toLowerCase().email().max(254),
+  perfil: z.nativeEnum(PerfilOperador),
+}).strict();
+
+operadoresRoutes.patch("/:operadorId", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+  const operadorId = z.string().uuid().safeParse(request.params.operadorId);
+  const dados = atualizarOperadorSchema.safeParse(request.body);
+  if (!operadorId.success || !dados.success) return response.status(400).json({ mensagem: "Atualização de operador inválida." });
+  try {
+    return response.json(await new AtualizarOperadorService(prisma).execute(
+      operadorId.data, dados.data, contextoAuditoria(request, response),
+    ));
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "OPERADOR_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Operador não encontrado." });
+    if (erro instanceof Error && erro.message === "OPERADOR_DUPLICADO") return response.status(409).json({ mensagem: "Já existe um operador com este e-mail." });
+    if (erro instanceof Error && erro.message === "AUTORREBAIXAMENTO_NAO_PERMITIDO") return response.status(409).json({ mensagem: "Não é permitido rebaixar o próprio operador." });
+    if (erro instanceof Error && erro.message === "ULTIMO_ADMIN_ATIVO") return response.status(409).json({ mensagem: "A plataforma precisa manter um administrador ativo." });
+    throw erro;
+  }
+});
 
 const redefinirSenhaSchema = z.object({ senha: z.string().min(8).max(128) }).strict();
 
