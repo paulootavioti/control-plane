@@ -59,6 +59,12 @@ do ambiente. Ele também retorna os 20 eventos de provisionamento mais recentes
 com erro sanitizado e o indicador `retomadaManualDisponivel`, sem payload ou
 chave de idempotência interna.
 
+O inventário B2B em `GET /api/assinaturas` oferece paginação e filtros por
+assinante, plano, status, nome/slug e períodos de teste ou encerramento. A
+resposta limita o assinante à identificação mínima e traz versão do plano,
+condições comerciais estruturadas e total de faturas, sem documento, e-mail de
+cobrança, segredos ou política de cobrança livre.
+
 `POST /api/assinantes`, restrito a `OPERADOR` e `ADMIN_PLATAFORMA`, cadastra
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
