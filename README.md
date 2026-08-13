@@ -187,6 +187,11 @@ retorna somente o assinante mínimo e as contagens agregadas por unidade e licen
 nenhum aluno individual, documento, e-mail de cobrança, segredo ou credencial é
 selecionado.
 
+`GET /api/integracao/contagens/:snapshotId`, com os mesmos perfis, detalha a
+origem e a data do snapshot, o assinante mínimo e as contagens por licença. O
+retorno calcula totais de unidades e alunos ativos sem consultar alunos
+individuais, documentos, contatos, segredos ou credenciais.
+
 Operadores, financeiro, suporte e administradores consultam o inventário global
 em `GET /api/integracao/licencas`, com paginação e filtros por assinante, status,
 nome ou identificador da unidade e período de sincronização. O filtro
