@@ -6,8 +6,27 @@ import { prisma } from "../../shared/prisma";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { CriarOperadorService } from "./CriarOperadorService";
+import { ListarOperadoresService } from "./ListarOperadoresService";
 
 export const operadoresRoutes = Router();
+
+const filtrosOperadoresSchema = z.object({
+  busca: z.string().trim().min(1).max(120).optional(),
+  perfil: z.nativeEnum(PerfilOperador).optional(),
+  ativo: z.enum(["true", "false"]).transform((valor) => valor === "true").optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict();
+
+operadoresRoutes.get(
+  "/",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = filtrosOperadoresSchema.safeParse(request.query);
+    if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de operadores inválidos." });
+    return response.json(await new ListarOperadoresService(prisma).execute(filtros.data));
+  },
+);
 
 const novoOperadorSchema = z.object({
   nome: z.string().trim().min(2).max(120),

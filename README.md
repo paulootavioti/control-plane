@@ -37,6 +37,8 @@ O login usa `POST /api/auth/login` e a sessão pode ser consultada em
 Depois do bootstrap, somente `ADMIN_PLATAFORMA` cadastra novos operadores por
 `POST /api/operadores`. A senha é armazenada exclusivamente como hash e nunca
 aparece na resposta ou auditoria; o log registra apenas perfil e estado ativo.
+O mesmo perfil consulta `GET /api/operadores`, com paginação e filtros por
+nome/e-mail, perfil e estado ativo, sem receber hash ou versão de sessão.
 
 Operadores autenticados consultam assinantes por `GET /api/assinantes`, com
 os filtros opcionais `busca`, `status`, `pagina` e `limite`. A resposta reúne
