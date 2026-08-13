@@ -77,6 +77,10 @@ snapshot agregado mais recente do mês, cobra somente licenças ativas, aplica o
 mínimo por unidade e congela preços e memória de cálculo. Sem snapshot, nenhuma
 estimativa ou fatura é criada.
 
+Operadores autenticados consultam `GET /api/faturas`, com paginação e filtros
+por assinante, status, competência e período de vencimento. A listagem retorna
+somente o resumo comercial; memória de cálculo e snapshots ficam no detalhe.
+
 Após revisão, `POST /api/faturas/:faturaId/emitir` faz a transição idempotente
 de `RASCUNHO` para `ABERTA`, registra a data e a auditoria na mesma transação.
 A emissão comercial não chama gateway neste passo; cobrança externa e webhooks

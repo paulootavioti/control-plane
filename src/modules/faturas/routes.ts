@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { StatusFatura } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "../../shared/prisma";
@@ -12,8 +13,28 @@ import { CancelarFaturaService } from "./CancelarFaturaService";
 import { RegistrarPagamentoFaturaService } from "./RegistrarPagamentoFaturaService";
 import { EstornarFaturaService } from "./EstornarFaturaService";
 import { MarcarFaturasVencidasService } from "./MarcarFaturasVencidasService";
+import { ListarFaturasService } from "./ListarFaturasService";
 
 export const faturasRoutes = Router();
+
+const filtrosFaturasSchema = z.object({
+  assinanteId: z.string().uuid().optional(),
+  status: z.nativeEnum(StatusFatura).optional(),
+  competencia: competenciaSchema.optional(),
+  vencimentoInicio: z.coerce.date().optional(),
+  vencimentoFim: z.coerce.date().optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict().refine(
+  ({ vencimentoInicio, vencimentoFim }) => !vencimentoInicio || !vencimentoFim || vencimentoInicio <= vencimentoFim,
+  { message: "Período de vencimento inválido.", path: ["vencimentoFim"] },
+);
+
+faturasRoutes.get("/", autenticarOperador(), async (request, response) => {
+  const filtros = filtrosFaturasSchema.safeParse(request.query);
+  if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de faturas inválidos." });
+  return response.json(await new ListarFaturasService(prisma).execute(filtros.data));
+});
 
 faturasRoutes.post(
   "/marcar-vencidas",
