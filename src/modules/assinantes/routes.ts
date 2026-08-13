@@ -11,6 +11,7 @@ import { ContratarAssinaturaService } from "./ContratarAssinaturaService";
 import { assinaturaSchema } from "../comercial/regrasComerciais";
 import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
+import { TrocarPlanoAssinaturaService } from "./TrocarPlanoAssinaturaService";
 
 export const assinantesRoutes = Router();
 
@@ -85,6 +86,42 @@ assinantesRoutes.patch(
       }
       if (erro instanceof Error && ["STATUS_JA_APLICADO", "TRANSICAO_INVALIDA"].includes(erro.message)) {
         return response.status(409).json({ mensagem: "Transição de assinatura não permitida." });
+      }
+      throw erro;
+    }
+  },
+);
+
+const trocaPlanoSchema = z.object({ planoId: z.string().uuid() }).strict();
+
+assinantesRoutes.post(
+  "/:assinanteId/assinaturas/:assinaturaId/trocar-plano",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ids = z.object({ assinanteId: z.string().uuid(), assinaturaId: z.string().uuid() })
+      .safeParse(request.params);
+    const dados = trocaPlanoSchema.safeParse(request.body);
+    if (!ids.success || !dados.success) return response.status(400).json({ mensagem: "Troca de plano inválida." });
+    try {
+      const resultado = await new TrocarPlanoAssinaturaService(prisma).execute(
+        ids.data.assinanteId,
+        ids.data.assinaturaId,
+        dados.data.planoId,
+        contextoAuditoria(request, response),
+      );
+      return response.status(resultado.alterada ? 201 : 200).json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      }
+      if (erro instanceof Error && erro.message === "ASSINATURA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Assinatura não encontrada." });
+      }
+      if (erro instanceof Error && [
+        "PLANO_NAO_ELEGIVEL", "ASSINATURA_ENCERRADA", "ASSINATURA_NAO_ELEGIVEL",
+        "PLANO_JA_APLICADO", "ASSINATURA_CORRENTE_CONFLITANTE", "TROCA_PLANO_CONCORRENTE",
+      ].includes(erro.message)) {
+        return response.status(409).json({ mensagem: "Troca de plano não permitida." });
       }
       throw erro;
     }

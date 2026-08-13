@@ -91,6 +91,13 @@ livres.
 para um prospect. O banco garante uma única assinatura corrente por assinante;
 provisionamento continua sendo solicitado em comando separado.
 
+`POST /api/assinantes/:assinanteId/assinaturas/:assinaturaId/trocar-plano`
+troca uma assinatura corrente para a versão vigente de outro plano ativo. A
+operação serializável encerra a assinatura anterior e cria uma nova, preserva
+status, vencimento, período de teste e condições negociadas, sem reescrever o
+histórico usado pelas faturas. Repetições são idempotentes e a troca gera uma
+auditoria sanitizada; conflitos concorrentes retornam conflito.
+
 `PATCH /api/assinantes/:assinanteId/assinaturas/:assinaturaId/status` aplica
 transições comerciais explícitas. A resposta informa `ambienteId` e
 `exigeEnvioConcessao`; a entrega permanece um comando separado para que falha
