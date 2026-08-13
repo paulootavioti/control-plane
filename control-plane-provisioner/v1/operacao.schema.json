@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["operacao", "tenantKey", "secretRef"],
   "properties": {
-    "operacao": { "enum": ["APLICAR_MIGRATIONS", "EXECUTAR_BOOTSTRAP", "VALIDAR_SAUDE"] },
+    "operacao": { "enum": ["APLICAR_MIGRATIONS", "EXECUTAR_BOOTSTRAP", "VALIDAR_SAUDE", "ROTACIONAR_CREDENCIAL", "SUSPENDER", "REATIVAR"] },
     "tenantKey": { "type": "string", "format": "uuid" },
     "secretRef": { "type": "string", "minLength": 1, "maxLength": 2048 }
   }
