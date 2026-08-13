@@ -9,6 +9,7 @@ import { RetomarProvisionamentoService } from "./RetomarProvisionamentoService";
 import { ListarEventosProvisionamentoService } from "./ListarEventosProvisionamentoService";
 import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
 import { ObterAmbienteTenantService } from "./ObterAmbienteTenantService";
+import { ObterEventoProvisionamentoService } from "./ObterEventoProvisionamentoService";
 
 export const provisionamentoRoutes = Router();
 
@@ -85,6 +86,23 @@ provisionamentoRoutes.get(
       return response.status(400).json({ mensagem: "Filtros de provisionamento inválidos." });
     }
     return response.json(await new ListarEventosProvisionamentoService(prisma).execute(filtros.data));
+  },
+);
+
+provisionamentoRoutes.get(
+  "/eventos/:eventoId",
+  autenticarOperador(["OPERADOR", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const eventoId = z.string().uuid().safeParse(request.params.eventoId);
+    if (!eventoId.success) return response.status(400).json({ mensagem: "Evento inválido." });
+    try {
+      return response.json(await new ObterEventoProvisionamentoService(prisma).execute(eventoId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "EVENTO_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Evento de provisionamento não encontrado." });
+      }
+      throw erro;
+    }
   },
 );
 
