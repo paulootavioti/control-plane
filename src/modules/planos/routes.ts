@@ -7,6 +7,7 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { CriarPlanoService } from "./CriarPlanoService";
 import { CriarVersaoPlanoService } from "./CriarVersaoPlanoService";
 import { ListarPlanosService } from "./ListarPlanosService";
+import { AlterarStatusPlanoService } from "./AlterarStatusPlanoService";
 
 export const planosRoutes = Router();
 
@@ -92,4 +93,27 @@ planosRoutes.get("/", autenticarOperador(), async (request, response) => {
 
   const planos = await new ListarPlanosService(prisma).execute(validacao.data.incluirHistorico);
   return response.json({ itens: planos });
+});
+
+const alterarStatusSchema = z.object({ ativo: z.boolean() }).strict();
+
+planosRoutes.patch("/:planoId/status", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+  const parametros = z.object({ planoId: z.uuid() }).safeParse(request.params);
+  const dados = alterarStatusSchema.safeParse(request.body);
+  if (!parametros.success || !dados.success) {
+    return response.status(400).json({ mensagem: "Alteração de estado do plano inválida." });
+  }
+
+  try {
+    return response.json(await new AlterarStatusPlanoService(prisma).execute(
+      parametros.data.planoId,
+      dados.data.ativo,
+      contextoAuditoria(request, response),
+    ));
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "PLANO_NAO_ENCONTRADO") {
+      return response.status(404).json({ mensagem: "Plano não encontrado." });
+    }
+    throw erro;
+  }
 });

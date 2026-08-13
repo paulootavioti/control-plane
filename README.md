@@ -79,6 +79,11 @@ primeira versão comercial em uma única transação. A versão inicial é sempr
 gerar uma nova versão. Nome duplicado retorna conflito e a auditoria registra
 as condições comerciais sem copiar metadados comerciais livres.
 
+Administradores ativam ou desativam um plano por `PATCH /api/planos/:planoId/status`,
+enviando apenas `ativo`. A operação é idempotente e registra a transição sem
+dados livres; versões comerciais já publicadas e assinaturas existentes nunca
+são alteradas por esse comando.
+
 `POST /api/planos/:planoId/versoes`, também exclusivo de
 `ADMIN_PLATAFORMA`, publica a próxima versão comercial de um plano ativo. A
 operação usa transação serializável, rejeita vigências sobrepostas e encerra
