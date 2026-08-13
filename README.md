@@ -77,6 +77,10 @@ de `RASCUNHO` para `ABERTA`, registra a data e a auditoria na mesma transação.
 A emissão comercial não chama gateway neste passo; cobrança externa e webhooks
 permanecem integrações posteriores.
 
+`GET /api/faturas/:faturaId` retorna a revisão completa da cobrança: valores,
+estado, plano e condições congeladas, além da memória agregada por unidade.
+O detalhe não consulta nem expõe alunos individuais ou credenciais do tenant.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por

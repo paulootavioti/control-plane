@@ -7,8 +7,22 @@ import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { competenciaSchema } from "../comercial/regrasComerciais";
 import { GerarFaturaService } from "./GerarFaturaService";
 import { EmitirFaturaService } from "./EmitirFaturaService";
+import { ObterFaturaService } from "./ObterFaturaService";
 
 export const faturasRoutes = Router();
+
+faturasRoutes.get("/:faturaId", autenticarOperador(), async (request, response) => {
+  const faturaId = z.string().uuid().safeParse(request.params.faturaId);
+  if (!faturaId.success) return response.status(400).json({ mensagem: "Fatura inválida." });
+  try {
+    return response.json(await new ObterFaturaService(prisma).execute(faturaId.data));
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "FATURA_NAO_ENCONTRADA") {
+      return response.status(404).json({ mensagem: "Fatura não encontrada." });
+    }
+    throw erro;
+  }
+});
 
 const gerarSchema = z.object({
   assinanteId: z.string().uuid(),
