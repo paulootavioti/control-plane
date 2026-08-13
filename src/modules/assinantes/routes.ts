@@ -13,6 +13,8 @@ import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { TrocarPlanoAssinaturaService } from "./TrocarPlanoAssinaturaService";
 import { GerenciarContatoService } from "./GerenciarContatoService";
+import { CriarContatoAssinanteService } from "./CriarContatoAssinanteService";
+import { AtualizarAssinanteService } from "./AtualizarAssinanteService";
 
 export const assinantesRoutes = Router();
 
@@ -82,7 +84,10 @@ const contatoSchema = z.object({
   telefone: z.string().trim().min(8).max(30).optional(),
   tipo: z.nativeEnum(TipoContatoAssinante),
   principal: z.boolean().default(false),
-}).strict();
+}).strict().refine(
+  ({ email, telefone }) => Boolean(email || telefone),
+  { message: "Informe e-mail ou telefone.", path: ["email"] },
+);
 
 const novoAssinanteSchema = z.object({
   nomeFantasia: z.string().trim().min(2).max(160),
@@ -109,6 +114,70 @@ assinantesRoutes.post(
       const resultado = await new CriarAssinanteService(prisma).execute(validacao.data, contextoAuditoria(request, response));
       return response.status(201).json(resultado);
     } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_DUPLICADO") {
+        return response.status(409).json({ mensagem: "Documento ou slug já cadastrado." });
+      }
+      throw erro;
+    }
+  },
+);
+
+assinantesRoutes.post(
+  "/:assinanteId/contatos",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = contatoSchema.safeParse(request.body);
+    if (!assinanteId.success || !dados.success) {
+      return response.status(400).json({ mensagem: "Dados do contato inválidos." });
+    }
+    try {
+      const contato = await new CriarContatoAssinanteService(prisma).execute(
+        assinanteId.data,
+        { ...dados.data, email: dados.data.email?.toLowerCase() },
+        contextoAuditoria(request, response),
+      );
+      return response.status(201).json(contato);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      }
+      if (erro instanceof Error && erro.message === "CONTATO_PRINCIPAL_CONCORRENTE") {
+        return response.status(409).json({ mensagem: "Outro contato principal foi definido simultaneamente." });
+      }
+      throw erro;
+    }
+  },
+);
+
+const atualizarAssinanteSchema = z.object({
+  nomeFantasia: z.string().trim().min(2).max(160).optional(),
+  razaoSocial: z.string().trim().min(2).max(200).nullable().optional(),
+  documento: z.string().transform((valor) => valor.replace(/\D/g, ""))
+    .refine((valor) => valor.length === 11 || valor.length === 14, "Documento inválido.").optional(),
+  emailCobranca: z.string().trim().email().max(254).transform((valor) => valor.toLowerCase()).optional(),
+  telefone: z.string().trim().min(8).max(30).nullable().optional(),
+  slug: z.string().trim().toLowerCase()
+    .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/).optional(),
+}).strict().refine((dados) => Object.keys(dados).length > 0, { message: "Informe ao menos um campo." });
+
+assinantesRoutes.patch(
+  "/:assinanteId",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = atualizarAssinanteSchema.safeParse(request.body);
+    if (!assinanteId.success || !dados.success) {
+      return response.status(400).json({ mensagem: "Dados do assinante inválidos." });
+    }
+    try {
+      return response.json(await new AtualizarAssinanteService(prisma).execute(
+        assinanteId.data, dados.data, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      }
       if (erro instanceof Error && erro.message === "ASSINANTE_DUPLICADO") {
         return response.status(409).json({ mensagem: "Documento ou slug já cadastrado." });
       }

@@ -81,6 +81,13 @@ assinante mínimo e não expõe documento, e-mail de cobrança ou segredos.
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
 
+`POST /api/assinantes/:assinanteId/contatos`, disponível para `OPERADOR` e
+`ADMIN_PLATAFORMA`, cadastra um contato com pelo menos e-mail ou telefone. Ao
+defini-lo como principal, os demais deixam de ser principais na mesma
+transação serializável; um índice parcial do PostgreSQL garante no máximo um
+principal por assinante mesmo sob concorrência. A auditoria registra somente
+tipo e indicador de principal, sem e-mail ou telefone em claro.
+
 `GET /api/planos` lista planos ativos e suas versões vigentes. Operadores podem
 usar `incluirHistorico=true` para consultar planos inativos e versões
 encerradas sem modificar o histórico comercial.
@@ -124,6 +131,13 @@ Cadastro, contratação e transição de assinatura gravam `AuditLogPlataforma`
 na mesma transação da mudança. A trilha registra operador, origem, IP,
 dispositivo, ação, alvo e alterações sanitizadas, sem documento, e-mail,
 tokens ou credenciais.
+
+Operadores e administradores editam os dados comerciais por
+`PATCH /api/assinantes/:assinanteId`. O comando parcial aceita somente nome,
+razão social, documento, e-mail de cobrança, telefone e slug, é idempotente e
+não altera status, contatos, assinatura ou ambiente. Documento, e-mail e
+telefone nunca são copiados em claro para a auditoria, que registra apenas que
+esses campos foram alterados.
 
 Administradores da plataforma consultam `GET /api/auditoria`, com paginação e
 filtros por assinante, operador, ação, alvo e período. A resposta inclui IP e
