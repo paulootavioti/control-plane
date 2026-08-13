@@ -67,6 +67,12 @@ inicia provisionamento implicitamente; essas operações permanecem separadas.
 usar `incluirHistorico=true` para consultar planos inativos e versões
 encerradas sem modificar o histórico comercial.
 
+`POST /api/planos`, exclusivo de `ADMIN_PLATAFORMA`, cria o plano ativo e sua
+primeira versão comercial em uma única transação. A versão inicial é sempre
+`1`; condições já publicadas não são atualizadas, e futuras mudanças devem
+gerar uma nova versão. Nome duplicado retorna conflito e a auditoria registra
+as condições comerciais sem copiar metadados comerciais livres.
+
 `POST /api/assinantes/:assinanteId/assinaturas` contrata uma versão vigente
 para um prospect. O banco garante uma única assinatura corrente por assinante;
 provisionamento continua sendo solicitado em comando separado.

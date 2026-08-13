@@ -2,10 +2,46 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { prisma } from "../../shared/prisma";
+import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { autenticarOperador } from "../auth/autenticarOperador";
+import { CriarPlanoService } from "./CriarPlanoService";
 import { ListarPlanosService } from "./ListarPlanosService";
 
 export const planosRoutes = Router();
+
+const novoPlanoSchema = z.object({
+  nome: z.string().trim().min(2).max(120),
+  descricao: z.string().trim().min(1).max(500).optional(),
+  vigenteDesde: z.coerce.date(),
+  vigenteAte: z.coerce.date().nullable().optional(),
+  alunosPorBloco: z.number().int().positive(),
+  precoPorBlocoCentavos: z.number().int().positive(),
+  blocosMinimosPorUnidade: z.number().int().positive().default(1),
+  moeda: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default("BRL"),
+  recursos: z.record(z.string().min(1).max(100), z.boolean()),
+  metadadosComerciais: z.record(z.string().min(1).max(100), z.json()).nullable().optional(),
+}).strict().refine(
+  ({ vigenteDesde, vigenteAte }) => !vigenteAte || vigenteAte > vigenteDesde,
+  { message: "A vigência final precisa ser posterior à inicial.", path: ["vigenteAte"] },
+);
+
+planosRoutes.post("/", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+  const dados = novoPlanoSchema.safeParse(request.body);
+  if (!dados.success) return response.status(400).json({ mensagem: "Dados do plano inválidos." });
+
+  try {
+    const plano = await new CriarPlanoService(prisma).execute(
+      dados.data,
+      contextoAuditoria(request, response),
+    );
+    return response.status(201).json(plano);
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "PLANO_DUPLICADO") {
+      return response.status(409).json({ mensagem: "Já existe um plano com este nome." });
+    }
+    throw erro;
+  }
+});
 
 const filtrosSchema = z.object({
   incluirHistorico: z.enum(["true", "false"]).transform((valor) => valor === "true").default(false),
