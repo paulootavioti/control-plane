@@ -7,6 +7,7 @@ import { prisma } from "../../shared/prisma";
 import { SolicitarProvisionamento } from "./SolicitarProvisionamento";
 import { RetomarProvisionamentoService } from "./RetomarProvisionamentoService";
 import { ListarEventosProvisionamentoService } from "./ListarEventosProvisionamentoService";
+import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
 
 export const provisionamentoRoutes = Router();
 
@@ -30,6 +31,32 @@ const filtrosEventosSchema = z.object({
 }).strict().refine(({ inicio, fim }) => !inicio || !fim || inicio <= fim, {
   message: "Período inválido.", path: ["fim"],
 });
+
+const filtrosAmbientesSchema = z.object({
+  assinanteId: z.string().uuid().optional(),
+  status: z.enum([
+    "PENDENTE", "CRIANDO_PROJETO", "GRAVANDO_SEGREDO", "APLICANDO_MIGRATIONS",
+    "EXECUTANDO_BOOTSTRAP", "VALIDANDO", "ATIVO", "FALHOU", "SUSPENSO", "DESATIVADO",
+  ]).optional(),
+  provider: z.string().trim().regex(/^[A-Za-z0-9_-]{2,50}$/).transform((valor) => valor.toUpperCase()).optional(),
+  regiao: z.string().trim().regex(/^[A-Za-z0-9_-]{2,80}$/).optional(),
+  schemaDesatualizado: z.enum(["true", "false"])
+    .transform((valor) => valor === "true").optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict();
+
+provisionamentoRoutes.get(
+  "/ambientes",
+  autenticarOperador(["OPERADOR", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = filtrosAmbientesSchema.safeParse(request.query);
+    if (!filtros.success) {
+      return response.status(400).json({ mensagem: "Filtros de ambientes inválidos." });
+    }
+    return response.json(await new ListarAmbientesTenantService(prisma).execute(filtros.data));
+  },
+);
 
 provisionamentoRoutes.get(
   "/eventos",
