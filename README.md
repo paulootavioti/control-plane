@@ -159,6 +159,11 @@ filtros por assinante, operador, ação, alvo e período. A resposta inclui IP e
 dispositivo para investigação, mas não seleciona e-mail do operador, senha,
 documento, e-mail de cobrança, token ou referência de segredo.
 
+`GET /api/auditoria/:auditoriaId` oferece a um administrador o contexto completo
+de um registro para investigação, incluindo origem, mudanças já sanitizadas, IP
+e dispositivo. Operador e assinante permanecem em projeções mínimas, sem e-mail
+do operador, hash, versão de sessão, documento ou e-mail de cobrança.
+
 O resumo executivo em `GET /api/dashboard/resumo`, exclusivo para
 `ADMIN_PLATAFORMA`, agrega quantidades de assinantes, ambientes e licenças por
 status, além da quantidade e do valor total das faturas em cada estado. Nenhum
