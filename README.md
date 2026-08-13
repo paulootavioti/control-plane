@@ -79,6 +79,14 @@ primeira versão comercial em uma única transação. A versão inicial é sempr
 gerar uma nova versão. Nome duplicado retorna conflito e a auditoria registra
 as condições comerciais sem copiar metadados comerciais livres.
 
+`POST /api/planos/:planoId/versoes`, também exclusivo de
+`ADMIN_PLATAFORMA`, publica a próxima versão comercial de um plano ativo. A
+operação usa transação serializável, rejeita vigências sobrepostas e encerra
+uma versão anterior aberta no início da nova. Repetir exatamente a mesma
+publicação é idempotente; preços, limites, recursos e metadados de versões já
+publicadas nunca são reescritos. A auditoria não copia metadados comerciais
+livres.
+
 `POST /api/assinantes/:assinanteId/assinaturas` contrata uma versão vigente
 para um prospect. O banco garante uma única assinatura corrente por assinante;
 provisionamento continua sendo solicitado em comando separado.
