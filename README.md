@@ -88,7 +88,13 @@ concorrência e auditada; faturas pagas, vencidas ou estornadas são preservadas
 `POST /api/faturas/:faturaId/pagar` registra pagamento de fatura `ABERTA` ou
 `VENCIDA`, com gateway e referência única. Repetir a mesma confirmação é
 idempotente; referências reutilizadas ou uma segunda baixa são recusadas. A
-regularização da assinatura permanece uma decisão separada do próximo fluxo.
+regularização comercial segue as regras descritas abaixo.
+
+Quando a assinatura está `INADIMPLENTE`, a baixa verifica outras faturas
+vencidas na mesma transação. Sem pendências restantes, ela volta para `ATIVA`
+e a resposta informa `exigeEnvioConcessao`; assinaturas `SUSPENSA` ou
+`CANCELADA`, assim como ambientes suspensos ou desativados, nunca são
+reativados automaticamente.
 
 ## Worker de provisionamento
 
