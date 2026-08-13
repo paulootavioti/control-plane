@@ -4,15 +4,11 @@ import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
 
 describe("listagem do inventário de ambientes tenant", () => {
   it("filtra, pagina e não seleciona material sensível", async () => {
-    const referenciaSchema = { _ref: "schemaVersaoDesejada" };
     const count = vi.fn().mockReturnValue("contagem");
     const findMany = vi.fn().mockReturnValue("consulta");
     const db = {
-      ambienteTenant: {
-        fields: { schemaVersaoDesejada: referenciaSchema },
-        count,
-        findMany,
-      },
+      ambienteTenant: { count, findMany },
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "ambiente-1" }]),
       $transaction: vi.fn().mockResolvedValue([6, [{
         id: "ambiente-1",
         status: "FALHOU",
@@ -37,10 +33,7 @@ describe("listagem do inventário de ambientes tenant", () => {
       status: "FALHOU",
       provider: "NEON",
       regiao: "aws-sa-east-1",
-      OR: [
-        { schemaVersaoAtual: null },
-        { NOT: { schemaVersaoAtual: referenciaSchema } },
-      ],
+      id: { in: ["ambiente-1"] },
     } });
     const consulta = findMany.mock.calls[0][0];
     expect(consulta.skip).toBe(5);
@@ -65,11 +58,11 @@ describe("listagem do inventário de ambientes tenant", () => {
   });
 
   it("filtra ambientes com schema atualizado", async () => {
-    const referenciaSchema = { _ref: "schemaVersaoDesejada" };
     const count = vi.fn().mockReturnValue("contagem");
     const findMany = vi.fn().mockReturnValue("consulta");
     const db = {
-      ambienteTenant: { fields: { schemaVersaoDesejada: referenciaSchema }, count, findMany },
+      ambienteTenant: { count, findMany },
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "ambiente-2" }]),
       $transaction: vi.fn().mockResolvedValue([0, []]),
     };
 
@@ -78,7 +71,7 @@ describe("listagem do inventário de ambientes tenant", () => {
     });
 
     expect(count).toHaveBeenCalledWith({
-      where: { schemaVersaoAtual: referenciaSchema },
+      where: { id: { in: ["ambiente-2"] } },
     });
   });
 });

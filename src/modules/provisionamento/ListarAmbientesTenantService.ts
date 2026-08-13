@@ -14,21 +14,21 @@ export class ListarAmbientesTenantService {
   constructor(private readonly db: PrismaClient) {}
 
   async execute(filtros: FiltrosAmbientesTenant) {
-    const referenciaSchemaDesejado = this.db.ambienteTenant.fields.schemaVersaoDesejada;
+    const idsPorSchema = filtros.schemaDesatualizado === undefined
+      ? undefined
+      : await this.db.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+          SELECT "id"
+          FROM "AmbienteTenant"
+          WHERE ${filtros.schemaDesatualizado
+            ? Prisma.sql`"schemaVersaoAtual" IS DISTINCT FROM "schemaVersaoDesejada"`
+            : Prisma.sql`"schemaVersaoAtual" IS NOT DISTINCT FROM "schemaVersaoDesejada"`}
+        `);
     const where: Prisma.AmbienteTenantWhereInput = {
       ...(filtros.assinanteId ? { assinanteId: filtros.assinanteId } : {}),
       ...(filtros.status ? { status: filtros.status } : {}),
       ...(filtros.provider ? { provider: filtros.provider } : {}),
       ...(filtros.regiao ? { regiao: filtros.regiao } : {}),
-      ...(filtros.schemaDesatualizado === true ? {
-        OR: [
-          { schemaVersaoAtual: null },
-          { NOT: { schemaVersaoAtual: referenciaSchemaDesejado } },
-        ],
-      } : {}),
-      ...(filtros.schemaDesatualizado === false ? {
-        schemaVersaoAtual: referenciaSchemaDesejado,
-      } : {}),
+      ...(idsPorSchema ? { id: { in: idsPorSchema.map(({ id }) => id) } } : {}),
     };
     const skip = (filtros.pagina - 1) * filtros.limite;
     const [total, ambientes] = await this.db.$transaction([
