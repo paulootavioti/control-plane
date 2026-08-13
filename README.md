@@ -258,9 +258,12 @@ quando outro lote deve ser executado.
 
 A função `provisionar-background` é protegida por
 `CONTROL_PLANE_WORKER_SECRET`. Por segurança,
-`PROVISIONAMENTO_REAL_HABILITADO` deve permanecer `false` até os adaptadores
-Neon e do cofre de segredos estarem configurados e validados. Enquanto isso,
-a função não adquire nem altera eventos da fila.
+`PROVISIONAMENTO_REAL_HABILITADO` deve permanecer `false` até Neon, AWS Secrets
+Manager e o provisionador isolado estarem configurados e validados. Enquanto
+isso, a função não adquire nem altera eventos da fila. Quando habilitada, ela
+processa um evento elegível por chamada: cria o projeto no Neon, grava URLs e a
+chave privada somente no cofre e solicita migrations, bootstrap e health ao
+provisionador por `secretRef`; connection strings nunca atravessam essa API.
 
 Ao concluir todas as etapas, o worker ativa ambiente e assinante na mesma
 transação. Falhas temporárias permanecem disponíveis para retomada; somente o

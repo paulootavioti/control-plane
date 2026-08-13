@@ -1,4 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
+import { criarInfraestruturaTenantReal } from "../../src/modules/provisionamento/infra/InfraestruturaTenantReal";
+import { executarProximo } from "../../src/modules/provisionamento/worker/executarProximo";
 
 function autorizado(recebido: string | undefined, esperado: string | undefined): boolean {
   if (!recebido || !esperado) return false;
@@ -7,7 +9,10 @@ function autorizado(recebido: string | undefined, esperado: string | undefined):
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export async function handler(event: { headers: Record<string, string | undefined> }) {
+export async function handler(
+  event: { headers: Record<string, string | undefined> },
+  executar: typeof executarProximo = executarProximo,
+) {
   if (!autorizado(event.headers["x-control-plane-worker-secret"], process.env.CONTROL_PLANE_WORKER_SECRET)) {
     return { statusCode: 401, body: "Não autorizado" };
   }
@@ -16,7 +21,6 @@ export async function handler(event: { headers: Record<string, string | undefine
     return { statusCode: 503, body: "Provisionamento real ainda não configurado" };
   }
 
-  // O runner será conectado aqui quando os adaptadores Neon e cofre estiverem
-  // configurados. A guarda acima impede aquisição acidental de eventos.
-  return { statusCode: 503, body: "Adaptadores de infraestrutura não configurados" };
+  const resultado = await executar(criarInfraestruturaTenantReal());
+  return { statusCode: 200, body: JSON.stringify({ resultado }) };
 }
