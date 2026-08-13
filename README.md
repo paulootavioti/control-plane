@@ -81,6 +81,10 @@ permanecem integrações posteriores.
 estado, plano e condições congeladas, além da memória agregada por unidade.
 O detalhe não consulta nem expõe alunos individuais ou credenciais do tenant.
 
+`POST /api/faturas/:faturaId/cancelar` exige motivo e permite cancelar apenas
+faturas em `RASCUNHO` ou `ABERTA`. A operação é idempotente, protegida contra
+concorrência e auditada; faturas pagas, vencidas ou estornadas são preservadas.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por

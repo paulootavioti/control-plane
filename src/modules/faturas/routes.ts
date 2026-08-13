@@ -8,6 +8,7 @@ import { competenciaSchema } from "../comercial/regrasComerciais";
 import { GerarFaturaService } from "./GerarFaturaService";
 import { EmitirFaturaService } from "./EmitirFaturaService";
 import { ObterFaturaService } from "./ObterFaturaService";
+import { CancelarFaturaService } from "./CancelarFaturaService";
 
 export const faturasRoutes = Router();
 
@@ -28,6 +29,33 @@ const gerarSchema = z.object({
   assinanteId: z.string().uuid(),
   competencia: competenciaSchema,
 }).strict();
+
+const cancelamentoSchema = z.object({
+  motivo: z.string().trim().min(5).max(500),
+}).strict();
+
+faturasRoutes.post(
+  "/:faturaId/cancelar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const faturaId = z.string().uuid().safeParse(request.params.faturaId);
+    const dados = cancelamentoSchema.safeParse(request.body);
+    if (!faturaId.success || !dados.success) return response.status(400).json({ mensagem: "Cancelamento inválido." });
+    try {
+      return response.json(await new CancelarFaturaService(prisma).execute(
+        faturaId.data, dados.data.motivo, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "FATURA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Fatura não encontrada." });
+      }
+      if (erro instanceof Error && erro.message === "FATURA_NAO_CANCELAVEL") {
+        return response.status(409).json({ mensagem: "Fatura não está em estado válido para cancelamento." });
+      }
+      throw erro;
+    }
+  },
+);
 
 faturasRoutes.post(
   "/gerar",
