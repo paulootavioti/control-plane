@@ -96,6 +96,11 @@ e a resposta informa `exigeEnvioConcessao`; assinaturas `SUSPENSA` ou
 `CANCELADA`, assim como ambientes suspensos ou desativados, nunca são
 reativados automaticamente.
 
+`POST /api/faturas/:faturaId/estornar` exige motivo e permite apenas a
+transição `PAGA → ESTORNADA`. A referência original é preservada para
+conciliação, e a resposta exige revisão comercial; assinatura e acesso não são
+alterados automaticamente pelo estorno.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por

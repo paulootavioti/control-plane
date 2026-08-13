@@ -10,6 +10,7 @@ import { EmitirFaturaService } from "./EmitirFaturaService";
 import { ObterFaturaService } from "./ObterFaturaService";
 import { CancelarFaturaService } from "./CancelarFaturaService";
 import { RegistrarPagamentoFaturaService } from "./RegistrarPagamentoFaturaService";
+import { EstornarFaturaService } from "./EstornarFaturaService";
 
 export const faturasRoutes = Router();
 
@@ -39,6 +40,33 @@ const pagamentoSchema = z.object({
   gateway: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{2,40}$/),
   referenciaPagamento: z.string().trim().min(1).max(200),
 }).strict();
+
+const estornoSchema = z.object({
+  motivo: z.string().trim().min(5).max(500),
+}).strict();
+
+faturasRoutes.post(
+  "/:faturaId/estornar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const faturaId = z.string().uuid().safeParse(request.params.faturaId);
+    const dados = estornoSchema.safeParse(request.body);
+    if (!faturaId.success || !dados.success) return response.status(400).json({ mensagem: "Estorno inválido." });
+    try {
+      return response.json(await new EstornarFaturaService(prisma).execute(
+        faturaId.data, dados.data.motivo, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "FATURA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Fatura não encontrada." });
+      }
+      if (erro instanceof Error && erro.message === "FATURA_NAO_ESTORNAVEL") {
+        return response.status(409).json({ mensagem: "Fatura não está em estado válido para estorno." });
+      }
+      throw erro;
+    }
+  },
+);
 
 faturasRoutes.post(
   "/:faturaId/pagar",
