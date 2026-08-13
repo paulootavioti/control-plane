@@ -103,6 +103,13 @@ O resumo executivo em `GET /api/dashboard/resumo`, exclusivo para
 status, além da quantidade e do valor total das faturas em cada estado. Nenhum
 dado operacional de alunos é consultado para formar esses indicadores.
 
+Financeiro e administradores consultam `GET /api/dashboard/financeiro`, com
+filtros opcionais por assinante, competência e período de vencimento. O retorno
+agrega quantidade e valor em centavos por status e consolida recebíveis
+(`ABERTA` + `VENCIDA`), recebidos, estornados, cancelados e rascunhos, sempre
+preenchendo estados sem movimento com zero. A consulta usa somente faturas do
+Control Plane e não acessa alunos ou dados operacionais dos tenants.
+
 Operadores financeiros e administradores geram um rascunho idempotente por
 `POST /api/faturas/gerar`, informando assinante e competência. O cálculo usa o
 snapshot agregado mais recente do mês, cobra somente licenças ativas, aplica o
