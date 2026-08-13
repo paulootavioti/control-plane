@@ -5,6 +5,8 @@ import { EventoParaProcessar } from "../worker/contratos";
 const respostaMigrationSchema = z.object({ schemaVersaoAtual: z.string().trim().min(1).max(100) }).strict();
 type Operacao = "APLICAR_MIGRATIONS" | "EXECUTAR_BOOTSTRAP" | "VALIDAR_SAUDE";
 
+// Contrato canônico: contracts/control-plane-provisioner/v1/operacao.schema.json
+
 export class ClienteProvisionadorTenant {
   constructor(
     private readonly baseUrl: string,
