@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sysbelt.com.br/contracts/control-plane-provisioner/v1/operacao.schema.json",
+  "title": "Operação isolada de provisionamento de tenant",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operacao", "tenantKey", "secretRef"],
+  "properties": {
+    "operacao": { "enum": ["APLICAR_MIGRATIONS", "EXECUTAR_BOOTSTRAP", "VALIDAR_SAUDE"] },
+    "tenantKey": { "type": "string", "format": "uuid" },
+    "secretRef": { "type": "string", "minLength": 1, "maxLength": 2048 }
+  }
+}
