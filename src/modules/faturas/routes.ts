@@ -11,8 +11,17 @@ import { ObterFaturaService } from "./ObterFaturaService";
 import { CancelarFaturaService } from "./CancelarFaturaService";
 import { RegistrarPagamentoFaturaService } from "./RegistrarPagamentoFaturaService";
 import { EstornarFaturaService } from "./EstornarFaturaService";
+import { MarcarFaturasVencidasService } from "./MarcarFaturasVencidasService";
 
 export const faturasRoutes = Router();
+
+faturasRoutes.post(
+  "/marcar-vencidas",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => response.json(
+    await new MarcarFaturasVencidasService(prisma).execute(contextoAuditoria(request, response)),
+  ),
+);
 
 faturasRoutes.get("/:faturaId", autenticarOperador(), async (request, response) => {
   const faturaId = z.string().uuid().safeParse(request.params.faturaId);

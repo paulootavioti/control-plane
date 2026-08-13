@@ -101,6 +101,11 @@ transição `PAGA → ESTORNADA`. A referência original é preservada para
 conciliação, e a resposta exige revisão comercial; assinatura e acesso não são
 alterados automaticamente pelo estorno.
 
+`POST /api/faturas/marcar-vencidas` processa até 100 faturas `ABERTA` cujo
+vencimento já passou, mudando-as para `VENCIDA` e auditando cada transição. O
+comando é idempotente, ignora alterações concorrentes e informa `possuiMais`
+quando outro lote deve ser executado.
+
 ## Worker de provisionamento
 
 A função `provisionar-background` é protegida por
