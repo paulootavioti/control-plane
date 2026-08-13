@@ -12,6 +12,7 @@ import { auditoriaRoutes } from "./modules/auditoria/routes";
 import { dashboardRoutes } from "./modules/dashboard/routes";
 import { operadoresRoutes } from "./modules/operadores/routes";
 import { assinaturasRoutes } from "./modules/assinaturas/routes";
+import { contatosRoutes } from "./modules/contatos/routes";
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use("/auditoria", auditoriaRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/operadores", operadoresRoutes);
 app.use("/assinaturas", assinaturasRoutes);
+app.use("/contatos", contatosRoutes);
 
 app.get("/health", (_request, response) => {
   response.status(200).json({
