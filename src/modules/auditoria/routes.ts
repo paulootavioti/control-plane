@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../../shared/prisma";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { ListarAuditoriaService } from "./ListarAuditoriaService";
+import { ObterAuditoriaService } from "./ObterAuditoriaService";
 
 export const auditoriaRoutes = Router();
 
@@ -28,5 +29,22 @@ auditoriaRoutes.get(
     const filtros = filtrosSchema.safeParse(request.query);
     if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de auditoria inválidos." });
     return response.json(await new ListarAuditoriaService(prisma).execute(filtros.data));
+  },
+);
+
+auditoriaRoutes.get(
+  "/:auditoriaId",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const auditoriaId = z.string().uuid().safeParse(request.params.auditoriaId);
+    if (!auditoriaId.success) return response.status(400).json({ mensagem: "Auditoria inválida." });
+    try {
+      return response.json(await new ObterAuditoriaService(prisma).execute(auditoriaId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "AUDITORIA_NAO_ENCONTRADA") {
+        return response.status(404).json({ mensagem: "Auditoria não encontrada." });
+      }
+      throw erro;
+    }
   },
 );
