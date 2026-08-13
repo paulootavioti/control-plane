@@ -113,6 +113,14 @@ retorna somente o assinante mínimo e as contagens agregadas por unidade e licen
 nenhum aluno individual, documento, e-mail de cobrança, segredo ou credencial é
 selecionado.
 
+Operadores, financeiro, suporte e administradores consultam o inventário global
+em `GET /api/integracao/licencas`, com paginação e filtros por assinante, status,
+nome ou identificador da unidade e período de sincronização. O filtro
+`desatualizadaAntes` também inclui licenças nunca sincronizadas e não pode ser
+combinado com o período. A resposta contém apenas identificação, estado, datas
+de cobrança e última sincronização, junto ao assinante mínimo; nenhum aluno,
+documento, e-mail, segredo ou credencial é selecionado.
+
 Após revisão, `POST /api/faturas/:faturaId/emitir` faz a transição idempotente
 de `RASCUNHO` para `ABERTA`, registra a data e a auditoria na mesma transação.
 A emissão comercial não chama gateway neste passo; cobrança externa e webhooks

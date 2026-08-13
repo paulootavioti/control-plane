@@ -7,6 +7,7 @@ import { contagemContratoV1Schema } from "./contagemContrato";
 import { ReceberSnapshotContagem } from "./ReceberSnapshotContagem";
 import { ListarSnapshotsContagemService } from "./ListarSnapshotsContagemService";
 import { autenticarOperador } from "../auth/autenticarOperador";
+import { ListarLicencasUnidadeService } from "./ListarLicencasUnidadeService";
 
 export const integracaoRoutes = Router();
 
@@ -19,6 +20,34 @@ const filtrosContagensSchema = z.object({
 }).strict().refine(
   ({ dataCorteInicio, dataCorteFim }) => !dataCorteInicio || !dataCorteFim || dataCorteInicio <= dataCorteFim,
   { message: "Período de corte inválido.", path: ["dataCorteFim"] },
+);
+
+const filtrosLicencasSchema = z.object({
+  assinanteId: z.string().uuid().optional(),
+  status: z.enum(["PENDENTE", "ATIVA", "ENCERRADA"]).optional(),
+  busca: z.string().trim().min(1).max(120).optional(),
+  sincronizadaInicio: z.coerce.date().optional(),
+  sincronizadaFim: z.coerce.date().optional(),
+  desatualizadaAntes: z.coerce.date().optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict().superRefine((filtros, ctx) => {
+  if (filtros.sincronizadaInicio && filtros.sincronizadaFim && filtros.sincronizadaInicio > filtros.sincronizadaFim) {
+    ctx.addIssue({ code: "custom", message: "Período de sincronização inválido.", path: ["sincronizadaFim"] });
+  }
+  if (filtros.desatualizadaAntes && (filtros.sincronizadaInicio || filtros.sincronizadaFim)) {
+    ctx.addIssue({ code: "custom", message: "Escolha período ou desatualização.", path: ["desatualizadaAntes"] });
+  }
+});
+
+integracaoRoutes.get(
+  "/licencas",
+  autenticarOperador(["OPERADOR", "FINANCEIRO", "SUPORTE", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = filtrosLicencasSchema.safeParse(request.query);
+    if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de licenças inválidos." });
+    return response.json(await new ListarLicencasUnidadeService(prisma).execute(filtros.data));
+  },
 );
 
 integracaoRoutes.get(
