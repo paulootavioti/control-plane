@@ -9,6 +9,7 @@ import { ListarSnapshotsContagemService } from "./ListarSnapshotsContagemService
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { ListarLicencasUnidadeService } from "./ListarLicencasUnidadeService";
 import { ObterLicencaUnidadeService } from "./ObterLicencaUnidadeService";
+import { ObterSnapshotContagemService } from "./ObterSnapshotContagemService";
 
 export const integracaoRoutes = Router();
 
@@ -75,6 +76,23 @@ integracaoRoutes.get(
     const filtros = filtrosContagensSchema.safeParse(request.query);
     if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de contagens inválidos." });
     return response.json(await new ListarSnapshotsContagemService(prisma).execute(filtros.data));
+  },
+);
+
+integracaoRoutes.get(
+  "/contagens/:snapshotId",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const snapshotId = z.string().uuid().safeParse(request.params.snapshotId);
+    if (!snapshotId.success) return response.status(400).json({ mensagem: "Snapshot inválido." });
+    try {
+      return response.json(await new ObterSnapshotContagemService(prisma).execute(snapshotId.data));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "SNAPSHOT_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Snapshot não encontrado." });
+      }
+      throw erro;
+    }
   },
 );
 
