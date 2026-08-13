@@ -72,6 +72,11 @@ resposta limita o assinante à identificação mínima e traz versão do plano,
 condições comerciais estruturadas e total de faturas, sem documento, e-mail de
 cobrança, segredos ou política de cobrança livre.
 
+`GET /api/assinaturas/:assinaturaId` detalha as condições da assinatura, o
+plano versionado, o assinante mínimo e as 12 faturas mais recentes. A resposta
+informa o total de faturas, mas não seleciona política de cobrança livre,
+documentos, contatos, identificadores de gateway ou snapshots internos.
+
 Os contatos comerciais podem ser localizados globalmente por
 `GET /api/contatos`, com paginação e filtros por assinante, tipo, indicador de
 principal ou busca em nome, e-mail e telefone. A resposta identifica apenas o

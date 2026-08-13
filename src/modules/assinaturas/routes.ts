@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../../shared/prisma";
 import { autenticarOperador } from "../auth/autenticarOperador";
 import { ListarAssinaturasService } from "./ListarAssinaturasService";
+import { ObterAssinaturaService } from "./ObterAssinaturaService";
 
 export const assinaturasRoutes = Router();
 const filtrosSchema = z.object({
@@ -23,4 +24,17 @@ assinaturasRoutes.get("/", autenticarOperador(["OPERADOR", "FINANCEIRO", "SUPORT
   const filtros = filtrosSchema.safeParse(request.query);
   if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de assinaturas inválidos." });
   return response.json(await new ListarAssinaturasService(prisma).execute(filtros.data));
+});
+
+assinaturasRoutes.get("/:assinaturaId", autenticarOperador(["OPERADOR", "FINANCEIRO", "SUPORTE", "ADMIN_PLATAFORMA"]), async (request, response) => {
+  const assinaturaId = z.uuid().safeParse(request.params.assinaturaId);
+  if (!assinaturaId.success) return response.status(400).json({ mensagem: "Assinatura inválida." });
+  try {
+    return response.json(await new ObterAssinaturaService(prisma).execute(assinaturaId.data));
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "ASSINATURA_NAO_ENCONTRADA") {
+      return response.status(404).json({ mensagem: "Assinatura não encontrada." });
+    }
+    throw erro;
+  }
 });
