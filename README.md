@@ -65,6 +65,11 @@ resposta limita o assinante à identificação mínima e traz versão do plano,
 condições comerciais estruturadas e total de faturas, sem documento, e-mail de
 cobrança, segredos ou política de cobrança livre.
 
+Os contatos comerciais podem ser localizados globalmente por
+`GET /api/contatos`, com paginação e filtros por assinante, tipo, indicador de
+principal ou busca em nome, e-mail e telefone. A resposta identifica apenas o
+assinante mínimo e não expõe documento, e-mail de cobrança ou segredos.
+
 `POST /api/assinantes`, restrito a `OPERADOR` e `ADMIN_PLATAFORMA`, cadastra
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
