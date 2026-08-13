@@ -8,6 +8,7 @@ import { CriarPlanoService } from "./CriarPlanoService";
 import { CriarVersaoPlanoService } from "./CriarVersaoPlanoService";
 import { ListarPlanosService } from "./ListarPlanosService";
 import { AlterarStatusPlanoService } from "./AlterarStatusPlanoService";
+import { ObterPlanoService } from "./ObterPlanoService";
 
 export const planosRoutes = Router();
 
@@ -93,6 +94,19 @@ planosRoutes.get("/", autenticarOperador(), async (request, response) => {
 
   const planos = await new ListarPlanosService(prisma).execute(validacao.data.incluirHistorico);
   return response.json({ itens: planos });
+});
+
+planosRoutes.get("/:planoId", autenticarOperador(), async (request, response) => {
+  const planoId = z.uuid().safeParse(request.params.planoId);
+  if (!planoId.success) return response.status(400).json({ mensagem: "Plano inválido." });
+  try {
+    return response.json(await new ObterPlanoService(prisma).execute(planoId.data));
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "PLANO_NAO_ENCONTRADO") {
+      return response.status(404).json({ mensagem: "Plano não encontrado." });
+    }
+    throw erro;
+  }
 });
 
 const alterarStatusSchema = z.object({ ativo: z.boolean() }).strict();

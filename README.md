@@ -92,6 +92,11 @@ tipo e indicador de principal, sem e-mail ou telefone em claro.
 usar `incluirHistorico=true` para consultar planos inativos e versões
 encerradas sem modificar o histórico comercial.
 
+`GET /api/planos/:planoId` retorna a identidade do plano e todas as versões em
+ordem decrescente, com condições comerciais estruturadas e contagens total e
+corrente de assinaturas por versão. A consulta não expõe assinantes nem
+metadados comerciais livres.
+
 `POST /api/planos`, exclusivo de `ADMIN_PLATAFORMA`, cria o plano ativo e sua
 primeira versão comercial em uma única transação. A versão inicial é sempre
 `1`; condições já publicadas não são atualizadas, e futuras mudanças devem
