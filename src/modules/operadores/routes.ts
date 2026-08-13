@@ -8,8 +8,33 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { CriarOperadorService } from "./CriarOperadorService";
 import { ListarOperadoresService } from "./ListarOperadoresService";
 import { AlterarStatusOperadorService } from "./AlterarStatusOperadorService";
+import { RedefinirSenhaOperadorService } from "./RedefinirSenhaOperadorService";
 
 export const operadoresRoutes = Router();
+
+const redefinirSenhaSchema = z.object({ senha: z.string().min(8).max(128) }).strict();
+
+operadoresRoutes.patch(
+  "/:operadorId/senha",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const operadorId = z.string().uuid().safeParse(request.params.operadorId);
+    const dados = redefinirSenhaSchema.safeParse(request.body);
+    if (!operadorId.success || !dados.success) {
+      return response.status(400).json({ mensagem: "Redefinição de senha inválida." });
+    }
+    try {
+      return response.json(await new RedefinirSenhaOperadorService(prisma).execute(
+        operadorId.data, dados.data.senha, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "OPERADOR_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Operador não encontrado." });
+      }
+      throw erro;
+    }
+  },
+);
 
 const alterarStatusSchema = z.object({ ativo: z.boolean() }).strict();
 

@@ -42,6 +42,8 @@ nome/e-mail, perfil e estado ativo, sem receber hash ou versão de sessão.
 Também pode usar `PATCH /api/operadores/:operadorId/status` para ativar ou
 desativar terceiros. A mudança invalida sessões existentes, impede
 autodesativação e preserva ao menos um administrador ativo.
+`PATCH /api/operadores/:operadorId/senha` redefine a senha e invalida todas as
+sessões anteriores. A senha e seu hash nunca são retornados nem auditados.
 
 Operadores autenticados consultam assinantes por `GET /api/assinantes`, com
 os filtros opcionais `busca`, `status`, `pagina` e `limite`. A resposta reúne
