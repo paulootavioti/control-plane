@@ -97,6 +97,12 @@ Operadores autenticados consultam `GET /api/faturas`, com paginação e filtros
 por assinante, status, competência e período de vencimento. A listagem retorna
 somente o resumo comercial; memória de cálculo e snapshots ficam no detalhe.
 
+Operadores financeiros e administradores consultam `GET /api/integracao/contagens`,
+com paginação e filtros por assinante e período da data de corte. Cada snapshot
+retorna somente o assinante mínimo e as contagens agregadas por unidade e licença;
+nenhum aluno individual, documento, e-mail de cobrança, segredo ou credencial é
+selecionado.
+
 Após revisão, `POST /api/faturas/:faturaId/emitir` faz a transição idempotente
 de `RASCUNHO` para `ABERTA`, registra a data e a auditoria na mesma transação.
 A emissão comercial não chama gateway neste passo; cobrança externa e webhooks

@@ -1,11 +1,35 @@
 import { Router } from "express";
+import { z } from "zod";
 
 import { prisma } from "../../shared/prisma";
 import { verificarAssinaturaTenant } from "./assinaturaTenant";
 import { contagemContratoV1Schema } from "./contagemContrato";
 import { ReceberSnapshotContagem } from "./ReceberSnapshotContagem";
+import { ListarSnapshotsContagemService } from "./ListarSnapshotsContagemService";
+import { autenticarOperador } from "../auth/autenticarOperador";
 
 export const integracaoRoutes = Router();
+
+const filtrosContagensSchema = z.object({
+  assinanteId: z.string().uuid().optional(),
+  dataCorteInicio: z.coerce.date().optional(),
+  dataCorteFim: z.coerce.date().optional(),
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict().refine(
+  ({ dataCorteInicio, dataCorteFim }) => !dataCorteInicio || !dataCorteFim || dataCorteInicio <= dataCorteFim,
+  { message: "Período de corte inválido.", path: ["dataCorteFim"] },
+);
+
+integracaoRoutes.get(
+  "/contagens",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = filtrosContagensSchema.safeParse(request.query);
+    if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de contagens inválidos." });
+    return response.json(await new ListarSnapshotsContagemService(prisma).execute(filtros.data));
+  },
+);
 
 integracaoRoutes.post("/v1/contagens", async (request, response) => {
   const validacao = contagemContratoV1Schema.safeParse(request.body);
