@@ -32,6 +32,22 @@ export class ExecutarProvisionamento {
     try {
       const adquirido = await this.repositorio.iniciar(evento.id);
       if (!adquirido) return;
+      if (evento.tipo !== "CRIAR_AMBIENTE") {
+        const inventarioOperacional = await this.repositorio.obterInventario(evento.ambienteTenantId);
+        if (!inventarioOperacional?.secretRef) throw new Error("Operação requer segredo do ambiente provisionado.");
+        if (evento.tipo === "APLICAR_MIGRATIONS") {
+          const schemaVersaoAtual = await this.infraestrutura.aplicarMigrations(evento, inventarioOperacional.secretRef);
+          await this.repositorio.concluirEtapa(evento.id, evento.ambienteTenantId, "MIGRATIONS_APLICADAS", { schemaVersaoAtual });
+        } else if (evento.tipo === "ROTACIONAR_CREDENCIAL") {
+          await this.infraestrutura.rotacionarCredencial(evento, inventarioOperacional.secretRef);
+        } else if (evento.tipo === "SUSPENDER") {
+          await this.infraestrutura.suspender(evento, inventarioOperacional.secretRef);
+        } else {
+          await this.infraestrutura.reativar(evento, inventarioOperacional.secretRef);
+        }
+        await this.repositorio.concluir(evento.id, evento.ambienteTenantId, evento.tipo === "SUSPENDER" ? "SUSPENSO" : "ATIVO");
+        return;
+      }
       let existente = await this.repositorio.obterInventario(evento.ambienteTenantId);
       let inventario: ProjetoProvisionado;
 

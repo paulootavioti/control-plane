@@ -6,6 +6,7 @@ const evento = {
   id: "e1", ambienteTenantId: "a1",
   tenantKey: "64d729dc-8cbc-4fbf-9259-f28809faf55d",
   chaveIdempotencia: "criar:a1", etapaAtual: null,
+  tipo: "CRIAR_AMBIENTE",
 } as const;
 
 function resposta(body: unknown, status = 200) {

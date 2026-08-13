@@ -9,6 +9,7 @@ const evento: EventoParaProcessar = {
   tenantKey: "tenant-1",
   chaveIdempotencia: "criar:assinante-1",
   etapaAtual: null,
+  tipo: "CRIAR_AMBIENTE",
 };
 
 function dependencias() {
@@ -38,6 +39,7 @@ function dependencias() {
     aplicarMigrations: vi.fn().mockResolvedValue("20260812110000"),
     executarBootstrap: vi.fn(),
     validarSaude: vi.fn(),
+    rotacionarCredencial: vi.fn(), suspender: vi.fn(), reativar: vi.fn(),
   };
   return { repositorio, infraestrutura };
 }

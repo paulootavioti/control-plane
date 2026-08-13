@@ -4,6 +4,7 @@ export type EventoParaProcessar = {
   tenantKey: string;
   chaveIdempotencia: string;
   etapaAtual: EtapaConcluida | null;
+  tipo: "CRIAR_AMBIENTE" | "APLICAR_MIGRATIONS" | "ROTACIONAR_CREDENCIAL" | "SUSPENDER" | "REATIVAR";
 };
 
 export type InventarioProjeto = {
@@ -45,6 +46,9 @@ export interface InfraestruturaTenant {
   aplicarMigrations(evento: EventoParaProcessar, secretRef: string): Promise<string>;
   executarBootstrap(evento: EventoParaProcessar, secretRef: string): Promise<void>;
   validarSaude(evento: EventoParaProcessar, secretRef: string): Promise<void>;
+  rotacionarCredencial(evento: EventoParaProcessar, secretRef: string): Promise<void>;
+  suspender(evento: EventoParaProcessar, secretRef: string): Promise<void>;
+  reativar(evento: EventoParaProcessar, secretRef: string): Promise<void>;
 }
 
 export interface RepositorioProvisionamento {
@@ -57,6 +61,6 @@ export interface RepositorioProvisionamento {
     etapa: EtapaConcluida,
     dados?: Partial<InventarioProjeto> & Partial<SegredoTenantRegistrado> & { schemaVersaoAtual?: string },
   ): Promise<void>;
-  concluir(eventoId: string, ambienteTenantId: string): Promise<void>;
+  concluir(eventoId: string, ambienteTenantId: string, statusFinal?: "ATIVO" | "SUSPENSO"): Promise<void>;
   falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string): Promise<void>;
 }

@@ -4,6 +4,7 @@ import { ClienteProvisionadorTenant } from "./ClienteProvisionadorTenant";
 const evento = {
   id: "e1", ambienteTenantId: "a1", tenantKey: "tenant-1",
   chaveIdempotencia: "criar:tenant-1", etapaAtual: null,
+  tipo: "CRIAR_AMBIENTE",
 } as const;
 
 describe("cliente do provisionador de tenants", () => {

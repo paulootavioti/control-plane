@@ -11,6 +11,7 @@ describe("runner da fila", () => {
     const infraestrutura = {
       criarOuReconciliarProjeto: vi.fn(), gravarOuValidarSegredo: vi.fn(),
       aplicarMigrations: vi.fn(), executarBootstrap: vi.fn(), validarSaude: vi.fn(),
+      rotacionarCredencial: vi.fn(), suspender: vi.fn(), reativar: vi.fn(),
     };
 
     await expect(executarProximo(infraestrutura)).resolves.toBe("VAZIO");

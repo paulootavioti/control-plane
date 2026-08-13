@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EventoParaProcessar } from "../worker/contratos";
 
 const respostaMigrationSchema = z.object({ schemaVersaoAtual: z.string().trim().min(1).max(100) }).strict();
-type Operacao = "APLICAR_MIGRATIONS" | "EXECUTAR_BOOTSTRAP" | "VALIDAR_SAUDE";
+type Operacao = "APLICAR_MIGRATIONS" | "EXECUTAR_BOOTSTRAP" | "VALIDAR_SAUDE" | "ROTACIONAR_CREDENCIAL" | "SUSPENDER" | "REATIVAR";
 
 // Contrato canônico: contracts/control-plane-provisioner/v1/operacao.schema.json
 
@@ -26,6 +26,9 @@ export class ClienteProvisionadorTenant {
   async validarSaude(evento: EventoParaProcessar, secretRef: string): Promise<void> {
     await this.executar("VALIDAR_SAUDE", evento, secretRef);
   }
+  async rotacionarCredencial(evento: EventoParaProcessar, secretRef: string) { await this.executar("ROTACIONAR_CREDENCIAL", evento, secretRef); }
+  async suspender(evento: EventoParaProcessar, secretRef: string) { await this.executar("SUSPENDER", evento, secretRef); }
+  async reativar(evento: EventoParaProcessar, secretRef: string) { await this.executar("REATIVAR", evento, secretRef); }
 
   private async executar(operacao: Operacao, evento: EventoParaProcessar, secretRef: string): Promise<unknown> {
     const resposta = await this.http(`${this.baseUrl.replace(/\/$/, "")}/v1/tenants/operacoes`, {

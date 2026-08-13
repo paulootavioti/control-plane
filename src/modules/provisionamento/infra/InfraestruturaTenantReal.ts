@@ -32,5 +32,8 @@ export function criarInfraestruturaTenantReal(): InfraestruturaTenant {
     aplicarMigrations: (evento, secretRef) => provisionador.aplicarMigrations(evento, secretRef),
     executarBootstrap: (evento, secretRef) => provisionador.executarBootstrap(evento, secretRef),
     validarSaude: (evento, secretRef) => provisionador.validarSaude(evento, secretRef),
+    rotacionarCredencial: (evento, secretRef) => provisionador.rotacionarCredencial(evento, secretRef),
+    suspender: (evento, secretRef) => provisionador.suspender(evento, secretRef),
+    reativar: (evento, secretRef) => provisionador.reativar(evento, secretRef),
   };
 }

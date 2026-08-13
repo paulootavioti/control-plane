@@ -39,6 +39,7 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
       tenantKey: evento.ambiente.tenantKey,
       chaveIdempotencia: evento.chaveIdempotencia,
       etapaAtual: evento.etapaAtual as EtapaConcluida | null,
+      tipo: evento.tipo,
     };
   }
 
@@ -101,11 +102,11 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
     ]);
   }
 
-  async concluir(eventoId: string, ambienteTenantId: string): Promise<void> {
+  async concluir(eventoId: string, ambienteTenantId: string, statusFinal: "ATIVO" | "SUSPENSO" = "ATIVO"): Promise<void> {
     await this.db.$transaction([
       this.db.ambienteTenant.update({
         where: { id: ambienteTenantId },
-        data: { status: "ATIVO", assinante: { update: { status: "ATIVO" } } },
+        data: { status: statusFinal, assinante: { update: { status: statusFinal === "SUSPENSO" ? "SUSPENSO" : "ATIVO" } } },
       }),
       this.db.eventoProvisionamento.update({
         where: { id: eventoId }, data: { status: "CONCLUIDO", concluidoEm: new Date() },
