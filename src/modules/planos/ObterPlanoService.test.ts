@@ -8,13 +8,14 @@ describe("detalhe do plano", () => {
     const groupBy = vi.fn().mockReturnValue("correntes");
     const db = {
       plano: { findUnique }, assinatura: { groupBy },
-      $transaction: vi.fn().mockResolvedValue([{
-        id: "p1", nome: "Pro", versoes: [
-          { id: "v2", versao: 2, recursos: { relatorios: true }, _count: { assinaturas: 5 } },
-          { id: "v1", versao: 1, recursos: {}, _count: { assinaturas: 8 } },
-        ],
-      }, [{ planoVersaoId: "v2", _count: { _all: 3 } }]]),
     };
+    findUnique.mockResolvedValue({
+      id: "p1", nome: "Pro", versoes: [
+        { id: "v2", versao: 2, recursos: { relatorios: true }, _count: { assinaturas: 5 } },
+        { id: "v1", versao: 1, recursos: {}, _count: { assinaturas: 8 } },
+      ],
+    });
+    groupBy.mockResolvedValue([{ planoVersaoId: "v2", _count: { planoVersaoId: 3 } }]);
 
     const resultado = await new ObterPlanoService(db as never).execute("p1");
 
@@ -26,7 +27,8 @@ describe("detalhe do plano", () => {
     expect(groupBy).toHaveBeenCalledWith({
       by: ["planoVersaoId"],
       where: { planoVersao: { planoId: "p1" }, encerradaEm: null },
-      _count: { _all: true },
+      orderBy: { planoVersaoId: "asc" },
+      _count: { planoVersaoId: true },
     });
     expect(resultado.versoes).toEqual([
       { id: "v2", versao: 2, recursos: { relatorios: true }, totalAssinaturas: 5, assinaturasCorrentes: 3 },
@@ -36,9 +38,8 @@ describe("detalhe do plano", () => {
 
   it("não revela diferença para plano ausente", async () => {
     const db = {
-      $transaction: vi.fn().mockResolvedValue([null, []]),
-      plano: { findUnique: vi.fn() },
-      assinatura: { groupBy: vi.fn() },
+      plano: { findUnique: vi.fn().mockResolvedValue(null) },
+      assinatura: { groupBy: vi.fn().mockResolvedValue([]) },
     };
     await expect(new ObterPlanoService(db as never).execute("p1")).rejects.toThrow("PLANO_NAO_ENCONTRADO");
   });

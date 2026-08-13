@@ -4,7 +4,7 @@ export class ObterPlanoService {
   constructor(private readonly db: PrismaClient) {}
 
   async execute(planoId: string) {
-    const [plano, correntesPorVersao] = await this.db.$transaction([
+    const [plano, correntesPorVersao] = await Promise.all([
       this.db.plano.findUnique({
         where: { id: planoId },
         select: {
@@ -35,12 +35,16 @@ export class ObterPlanoService {
       this.db.assinatura.groupBy({
         by: ["planoVersaoId"],
         where: { planoVersao: { planoId }, encerradaEm: null },
-        _count: { _all: true },
+        orderBy: { planoVersaoId: "asc" },
+        _count: { planoVersaoId: true },
       }),
     ]);
     if (!plano) throw new Error("PLANO_NAO_ENCONTRADO");
 
-    const correntes = new Map(correntesPorVersao.map((item) => [item.planoVersaoId, item._count._all]));
+    const correntes = new Map(correntesPorVersao.map((item) => [
+      item.planoVersaoId,
+      item._count.planoVersaoId,
+    ]));
     return {
       ...plano,
       versoes: plano.versoes.map(({ _count, ...versao }) => ({
