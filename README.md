@@ -71,6 +71,11 @@ filtros por assinante, operador, ação, alvo e período. A resposta inclui IP e
 dispositivo para investigação, mas não seleciona e-mail do operador, senha,
 documento, e-mail de cobrança, token ou referência de segredo.
 
+O resumo executivo em `GET /api/dashboard/resumo`, exclusivo para
+`ADMIN_PLATAFORMA`, agrega quantidades de assinantes, ambientes e licenças por
+status, além da quantidade e do valor total das faturas em cada estado. Nenhum
+dado operacional de alunos é consultado para formar esses indicadores.
+
 Operadores financeiros e administradores geram um rascunho idempotente por
 `POST /api/faturas/gerar`, informando assinante e competência. O cálculo usa o
 snapshot agregado mais recente do mês, cobra somente licenças ativas, aplica o
