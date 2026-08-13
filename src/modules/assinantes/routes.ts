@@ -12,6 +12,7 @@ import { assinaturaSchema } from "../comercial/regrasComerciais";
 import { AlterarStatusAssinaturaService } from "./AlterarStatusAssinaturaService";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { TrocarPlanoAssinaturaService } from "./TrocarPlanoAssinaturaService";
+import { CriarContatoAssinanteService } from "./CriarContatoAssinanteService";
 
 export const assinantesRoutes = Router();
 
@@ -28,7 +29,10 @@ const contatoSchema = z.object({
   telefone: z.string().trim().min(8).max(30).optional(),
   tipo: z.nativeEnum(TipoContatoAssinante),
   principal: z.boolean().default(false),
-}).strict();
+}).strict().refine(
+  ({ email, telefone }) => Boolean(email || telefone),
+  { message: "Informe e-mail ou telefone.", path: ["email"] },
+);
 
 const novoAssinanteSchema = z.object({
   nomeFantasia: z.string().trim().min(2).max(160),
@@ -57,6 +61,34 @@ assinantesRoutes.post(
     } catch (erro) {
       if (erro instanceof Error && erro.message === "ASSINANTE_DUPLICADO") {
         return response.status(409).json({ mensagem: "Documento ou slug já cadastrado." });
+      }
+      throw erro;
+    }
+  },
+);
+
+assinantesRoutes.post(
+  "/:assinanteId/contatos",
+  autenticarOperador(["OPERADOR", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = contatoSchema.safeParse(request.body);
+    if (!assinanteId.success || !dados.success) {
+      return response.status(400).json({ mensagem: "Dados do contato inválidos." });
+    }
+    try {
+      const contato = await new CriarContatoAssinanteService(prisma).execute(
+        assinanteId.data,
+        { ...dados.data, email: dados.data.email?.toLowerCase() },
+        contextoAuditoria(request, response),
+      );
+      return response.status(201).json(contato);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      }
+      if (erro instanceof Error && erro.message === "CONTATO_PRINCIPAL_CONCORRENTE") {
+        return response.status(409).json({ mensagem: "Outro contato principal foi definido simultaneamente." });
       }
       throw erro;
     }

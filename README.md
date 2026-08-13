@@ -74,6 +74,13 @@ assinante mínimo e não expõe documento, e-mail de cobrança ou segredos.
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
 
+`POST /api/assinantes/:assinanteId/contatos`, disponível para `OPERADOR` e
+`ADMIN_PLATAFORMA`, cadastra um contato com pelo menos e-mail ou telefone. Ao
+defini-lo como principal, os demais deixam de ser principais na mesma
+transação serializável; um índice parcial do PostgreSQL garante no máximo um
+principal por assinante mesmo sob concorrência. A auditoria registra somente
+tipo e indicador de principal, sem e-mail ou telefone em claro.
+
 `GET /api/planos` lista planos ativos e suas versões vigentes. Operadores podem
 usar `incluirHistorico=true` para consultar planos inativos e versões
 encerradas sem modificar o histórico comercial.
