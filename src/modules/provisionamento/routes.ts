@@ -10,6 +10,7 @@ import { ListarEventosProvisionamentoService } from "./ListarEventosProvisioname
 import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
 import { ObterAmbienteTenantService } from "./ObterAmbienteTenantService";
 import { ObterEventoProvisionamentoService } from "./ObterEventoProvisionamentoService";
+import { SolicitarAtualizacaoSchemaService } from "./SolicitarAtualizacaoSchemaService";
 
 export const provisionamentoRoutes = Router();
 
@@ -132,6 +133,20 @@ provisionamentoRoutes.post(
     }
   },
 );
+
+provisionamentoRoutes.post("/ambientes/:ambienteId/migrations", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+  const parametros = z.object({ ambienteId: z.string().uuid() }).safeParse(request.params);
+  const dados = z.object({ schemaVersaoDesejada: z.string().trim().min(1).max(100) }).strict().safeParse(request.body);
+  if (!parametros.success || !dados.success) return response.status(400).json({ mensagem: "Atualização de schema inválida." });
+  try {
+    const resultado = await new SolicitarAtualizacaoSchemaService(prisma).execute(parametros.data.ambienteId, dados.data.schemaVersaoDesejada, contextoAuditoria(request,response));
+    return response.status(resultado.duplicado ? 200 : 202).json(resultado);
+  } catch (erro) {
+    if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Ambiente não encontrado." });
+    if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ELEGIVEL") return response.status(409).json({ mensagem: "Ambiente não está ativo." });
+    throw erro;
+  }
+});
 
 provisionamentoRoutes.post(
   "/solicitacoes/:eventoId/retomar",
