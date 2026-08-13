@@ -87,6 +87,10 @@ Os contatos comerciais podem ser localizados globalmente por
 principal ou busca em nome, e-mail e telefone. A resposta identifica apenas o
 assinante mínimo e não expõe documento, e-mail de cobrança ou segredos.
 
+`GET /api/contatos/:contatoId` detalha o contato, o assinante mínimo e sua
+assinatura corrente. A consulta não seleciona documento, e-mail de cobrança,
+política livre, ambiente ou credenciais do tenant.
+
 `POST /api/assinantes`, restrito a `OPERADOR` e `ADMIN_PLATAFORMA`, cadastra
 uma organização inicialmente como `PROSPECT`. O comando não contrata plano nem
 inicia provisionamento implicitamente; essas operações permanecem separadas.
