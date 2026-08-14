@@ -40,6 +40,7 @@ export class ExecutarProvisionamento {
           await this.repositorio.concluirEtapa(evento.id, evento.ambienteTenantId, "MIGRATIONS_APLICADAS", { schemaVersaoAtual });
         } else if (evento.tipo === "ROTACIONAR_CREDENCIAL") {
           await this.infraestrutura.rotacionarCredencial(evento, inventarioOperacional.secretRef);
+          await this.repositorio.registrarRotacao(evento.ambienteTenantId);
         } else if (evento.tipo === "SUSPENDER") {
           await this.infraestrutura.suspender(evento, inventarioOperacional.secretRef);
         } else {

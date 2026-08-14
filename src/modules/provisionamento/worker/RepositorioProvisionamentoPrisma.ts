@@ -114,6 +114,13 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
     ]);
   }
 
+  async registrarRotacao(ambienteTenantId: string): Promise<void> {
+    await this.db.ambienteTenant.update({
+      where: { id: ambienteTenantId },
+      data: { credentialVersion: { increment: 1 }, ultimaRotacaoEm: new Date() },
+    });
+  }
+
   async falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string, tipo: EventoParaProcessar["tipo"]): Promise<void> {
     const evento = await this.db.eventoProvisionamento.findUniqueOrThrow({
       where: { id: eventoId }, select: { tentativas: true },
