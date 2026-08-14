@@ -14,6 +14,14 @@ function criarDb(tentativas = 1) {
 }
 
 describe("resultado persistido do provisionamento", () => {
+  it("registra a nova versão da credencial sem armazenar segredo", async () => {
+    const db = criarDb();
+    await new RepositorioProvisionamentoPrisma(db as never).registrarRotacao("ambiente-1");
+    expect(db.ambienteTenant.update).toHaveBeenCalledWith({
+      where: { id: "ambiente-1" },
+      data: { credentialVersion: { increment: 1 }, ultimaRotacaoEm: expect.any(Date) },
+    });
+  });
   it("ativa ambiente e assinante na mesma transação ao concluir", async () => {
     const db = criarDb();
 
