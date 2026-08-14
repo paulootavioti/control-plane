@@ -10,9 +10,34 @@ import { ListarEventosProvisionamentoService } from "./ListarEventosProvisioname
 import { ListarAmbientesTenantService } from "./ListarAmbientesTenantService";
 import { ObterAmbienteTenantService } from "./ObterAmbienteTenantService";
 import { ObterEventoProvisionamentoService } from "./ObterEventoProvisionamentoService";
+import { SolicitarRotacaoCredencialService } from "./SolicitarRotacaoCredencialService";
 import { SolicitarAtualizacaoSchemaService } from "./SolicitarAtualizacaoSchemaService";
 
 export const provisionamentoRoutes = Router();
+
+provisionamentoRoutes.post(
+  "/ambientes/:ambienteId/rotacionar-credencial",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const ambienteId = z.string().uuid().safeParse(request.params.ambienteId);
+    if (!ambienteId.success) return response.status(400).json({ mensagem: "Ambiente inválido." });
+    try {
+      const resultado = await new SolicitarRotacaoCredencialService(prisma).execute(
+        ambienteId.data,
+        contextoAuditoria(request, response),
+      );
+      return response.status(resultado.duplicado ? 200 : 202).json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") {
+        return response.status(404).json({ mensagem: "Ambiente não encontrado." });
+      }
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ELEGIVEL") {
+        return response.status(409).json({ mensagem: "Ambiente não está ativo." });
+      }
+      throw erro;
+    }
+  },
+);
 
 const solicitacaoSchema = z.object({
   assinanteId: z.string().uuid(),
