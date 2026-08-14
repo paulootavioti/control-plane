@@ -1,10 +1,16 @@
 [build]
-  command = "npm run build"
+  # `--include=dev` é obrigatório por causa do NODE_ENV=production abaixo: com
+  # ele o npm pula as devDependencies, e o build quebra em `tsc` com
+  # "TS2688: Cannot find type definition file for 'node'" — o `tsc` sobrevive
+  # como dependência transitiva, mas os @types não são instalados. Mesmo
+  # motivo do `npm ci --include=dev` no netlify.toml da raiz.
+  command = "npm ci --include=dev && npm run build"
   functions = "dist/netlify/functions"
   publish = "public"
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/api/*"
