@@ -19,6 +19,7 @@ function dependencias() {
     obterInventario: vi.fn().mockResolvedValue(null),
     concluirEtapa: vi.fn(),
     concluir: vi.fn(),
+    registrarRotacao: vi.fn(),
     falhar: vi.fn(),
   };
   const infraestrutura: InfraestruturaTenant = {
