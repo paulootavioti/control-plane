@@ -9,6 +9,11 @@ function autorizado(recebido: string | undefined, esperado: string | undefined):
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+function tamanhoLote(): number {
+  const valor = Number(process.env.CONTROL_PLANE_WORKER_BATCH_SIZE ?? "3");
+  return Number.isInteger(valor) && valor >= 1 && valor <= 10 ? valor : 3;
+}
+
 export async function handler(
   event: { headers: Record<string, string | undefined> },
   executar: typeof executarProximo = executarProximo,
@@ -21,6 +26,13 @@ export async function handler(
     return { statusCode: 503, body: "Provisionamento real ainda não configurado" };
   }
 
-  const resultado = await executar(criarInfraestruturaTenantReal());
-  return { statusCode: 200, body: JSON.stringify({ resultado }) };
+  const infraestrutura = criarInfraestruturaTenantReal();
+  let processados = 0;
+  let filaVazia = false;
+  for (let indice = 0; indice < tamanhoLote(); indice += 1) {
+    const resultado = await executar(infraestrutura);
+    if (resultado === "VAZIO") { filaVazia = true; break; }
+    processados += 1;
+  }
+  return { statusCode: 200, body: JSON.stringify({ processados, filaVazia }) };
 }
