@@ -63,5 +63,5 @@ export interface RepositorioProvisionamento {
   ): Promise<void>;
   concluir(eventoId: string, ambienteTenantId: string, statusFinal?: "ATIVO" | "SUSPENSO"): Promise<void>;
   registrarRotacao(ambienteTenantId: string): Promise<void>;
-  falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string): Promise<void>;
+  falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string, tipo: EventoParaProcessar["tipo"]): Promise<void>;
 }

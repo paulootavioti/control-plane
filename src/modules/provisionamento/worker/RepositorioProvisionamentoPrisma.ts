@@ -121,7 +121,7 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
     });
   }
 
-  async falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string): Promise<void> {
+  async falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string, tipo: EventoParaProcessar["tipo"]): Promise<void> {
     const evento = await this.db.eventoProvisionamento.findUniqueOrThrow({
       where: { id: eventoId }, select: { tentativas: true },
     });
@@ -130,8 +130,8 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
       ? new Date(Date.now() + minutos * 60_000)
       : null;
 
-    await this.db.$transaction([
-      this.db.ambienteTenant.update({
+    const atualizacoes = [];
+    if (tipo === "CRIAR_AMBIENTE") atualizacoes.push(this.db.ambienteTenant.update({
         where: { id: ambienteTenantId },
         data: {
           status: "FALHOU",
@@ -139,11 +139,11 @@ export class RepositorioProvisionamentoPrisma implements RepositorioProvisioname
             assinante: { update: { status: "ERRO_PROVISIONAMENTO" } },
           }),
         },
-      }),
-      this.db.eventoProvisionamento.update({
+      }));
+    atualizacoes.push(this.db.eventoProvisionamento.update({
         where: { id: eventoId },
         data: { status: "FALHOU", erroSanitizado, proximaTentativaEm },
-      }),
-    ]);
+      }));
+    await this.db.$transaction(atualizacoes);
   }
 }

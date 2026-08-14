@@ -109,6 +109,7 @@ export class ExecutarProvisionamento {
         evento.id,
         evento.ambienteTenantId,
         sanitizarErroProvisionamento(erro),
+        evento.tipo,
       );
       throw erro;
     }

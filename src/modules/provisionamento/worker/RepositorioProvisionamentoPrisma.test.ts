@@ -14,6 +14,15 @@ function criarDb(tentativas = 1) {
 }
 
 describe("resultado persistido do provisionamento", () => {
+  it("preserva ambiente ativo quando uma operação de frota falha", async () => {
+    const db = criarDb(2);
+    await new RepositorioProvisionamentoPrisma(db as never).falhar(
+      "evento-1", "ambiente-1", "erro seguro", "ROTACIONAR_CREDENCIAL",
+    );
+    expect(db.ambienteTenant.update).not.toHaveBeenCalled();
+    expect(db.eventoProvisionamento.update).toHaveBeenCalled();
+  });
+
   it("registra a nova versão da credencial sem armazenar segredo", async () => {
     const db = criarDb();
     await new RepositorioProvisionamentoPrisma(db as never).registrarRotacao("ambiente-1");
@@ -37,7 +46,7 @@ describe("resultado persistido do provisionamento", () => {
   it("mantém o assinante em provisionamento enquanto ainda haverá nova tentativa", async () => {
     const db = criarDb(2);
 
-    await new RepositorioProvisionamentoPrisma(db as never).falhar("evento-1", "ambiente-1", "erro seguro");
+    await new RepositorioProvisionamentoPrisma(db as never).falhar("evento-1", "ambiente-1", "erro seguro", "CRIAR_AMBIENTE");
 
     expect(db.ambienteTenant.update).toHaveBeenCalledWith({
       where: { id: "ambiente-1" },
@@ -52,7 +61,7 @@ describe("resultado persistido do provisionamento", () => {
   it("marca erro comercial quando as tentativas se esgotam", async () => {
     const db = criarDb(5);
 
-    await new RepositorioProvisionamentoPrisma(db as never).falhar("evento-1", "ambiente-1", "erro seguro");
+    await new RepositorioProvisionamentoPrisma(db as never).falhar("evento-1", "ambiente-1", "erro seguro", "CRIAR_AMBIENTE");
 
     expect(db.ambienteTenant.update).toHaveBeenCalledWith({
       where: { id: "ambiente-1" },
