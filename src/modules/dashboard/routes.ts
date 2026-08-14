@@ -6,8 +6,13 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { ObterResumoDashboardService } from "./ObterResumoDashboardService";
 import { ObterResumoFinanceiroService } from "./ObterResumoFinanceiroService";
 import { competenciaSchema } from "../comercial/regrasComerciais";
+import { ObterSaudeFrotaService } from "./ObterSaudeFrotaService";
 
 export const dashboardRoutes = Router();
+
+dashboardRoutes.get("/frota", autenticarOperador(["SUPORTE", "ADMIN_PLATAFORMA"]), async (_request, response) =>
+  response.json(await new ObterSaudeFrotaService(prisma).execute()),
+);
 
 dashboardRoutes.get(
   "/resumo",
