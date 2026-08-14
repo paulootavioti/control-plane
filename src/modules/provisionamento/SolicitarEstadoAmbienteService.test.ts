@@ -1,0 +1,5 @@
+import { describe, expect, it, vi } from "vitest";
+import { SolicitarEstadoAmbienteService } from "./SolicitarEstadoAmbienteService";
+const auditoria = { operadorId:"o", origem:"OPERADOR" as const, ip:null, userAgent:null };
+function db(status:string){const tx:any={ambienteTenant:{findUnique:vi.fn().mockResolvedValue({id:"a",assinanteId:"s",status,atualizadoEm:new Date("2026-08-13")})},assinatura:{findFirst:vi.fn().mockResolvedValue({id:"as"})},eventoProvisionamento:{findUnique:vi.fn(),create:vi.fn().mockResolvedValue({id:"e"})},auditLogPlataforma:{create:vi.fn()}};return{tx,db:{$transaction:(f:any)=>f(tx)}};}
+describe("estado operacional do ambiente",()=>{it("enfileira suspensão",async()=>{const x=db("ATIVO");expect(await new SolicitarEstadoAmbienteService(x.db as never).execute("a","SUSPENDER",auditoria)).toMatchObject({eventoId:"e"});});it("reativa somente com assinatura elegível",async()=>{const x=db("SUSPENSO");await new SolicitarEstadoAmbienteService(x.db as never).execute("a","REATIVAR",auditoria);expect(x.tx.assinatura.findFirst).toHaveBeenCalled();});});

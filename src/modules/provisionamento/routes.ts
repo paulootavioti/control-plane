@@ -12,6 +12,7 @@ import { ObterAmbienteTenantService } from "./ObterAmbienteTenantService";
 import { ObterEventoProvisionamentoService } from "./ObterEventoProvisionamentoService";
 import { SolicitarRotacaoCredencialService } from "./SolicitarRotacaoCredencialService";
 import { SolicitarAtualizacaoSchemaService } from "./SolicitarAtualizacaoSchemaService";
+import { SolicitarEstadoAmbienteService } from "./SolicitarEstadoAmbienteService";
 
 export const provisionamentoRoutes = Router();
 
@@ -38,6 +39,21 @@ provisionamentoRoutes.post(
     }
   },
 );
+for (const [caminho, operacao] of [["suspender", "SUSPENDER"], ["reativar", "REATIVAR"]] as const) {
+  provisionamentoRoutes.post(`/ambientes/:ambienteId/${caminho}`, autenticarOperador(["ADMIN_PLATAFORMA"]), async (request, response) => {
+    const id = z.string().uuid().safeParse(request.params.ambienteId);
+    if (!id.success) return response.status(400).json({ mensagem: "Ambiente inválido." });
+    try {
+      const resultado = await new SolicitarEstadoAmbienteService(prisma).execute(id.data, operacao, contextoAuditoria(request, response));
+      return response.status(resultado.duplicado ? 200 : 202).json(resultado);
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Ambiente não encontrado." });
+      if (erro instanceof Error && erro.message === "ASSINATURA_NAO_ELEGIVEL") return response.status(409).json({ mensagem: "Assinatura não permite reativação." });
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ELEGIVEL") return response.status(409).json({ mensagem: "Transição de ambiente inválida." });
+      throw erro;
+    }
+  });
+}
 
 const solicitacaoSchema = z.object({
   assinanteId: z.string().uuid(),
