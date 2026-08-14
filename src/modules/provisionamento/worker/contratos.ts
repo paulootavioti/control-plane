@@ -62,5 +62,5 @@ export interface RepositorioProvisionamento {
     dados?: Partial<InventarioProjeto> & Partial<SegredoTenantRegistrado> & { schemaVersaoAtual?: string },
   ): Promise<void>;
   concluir(eventoId: string, ambienteTenantId: string, statusFinal?: "ATIVO" | "SUSPENSO"): Promise<void>;
-  falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string): Promise<void>;
+  falhar(eventoId: string, ambienteTenantId: string, erroSanitizado: string, tipo: EventoParaProcessar["tipo"]): Promise<void>;
 }

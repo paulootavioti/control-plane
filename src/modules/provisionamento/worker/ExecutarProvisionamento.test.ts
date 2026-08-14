@@ -99,7 +99,7 @@ describe("worker de provisionamento", () => {
 
     await expect(new ExecutarProvisionamento(repositorio, infraestrutura).execute(evento)).rejects.toThrow();
     expect(repositorio.falhar).toHaveBeenCalledWith(
-      "evento-1", "ambiente-1", "Falha em [REDACTED] [REDACTED]",
+      "evento-1", "ambiente-1", "Falha em [REDACTED] [REDACTED]", "CRIAR_AMBIENTE",
     );
   });
 
