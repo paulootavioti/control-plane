@@ -1,3 +1,7 @@
+// Este script só roda fora do Netlify, então depende do .env para achar o
+// banco. Ver o comentário em server.ts.
+import "dotenv/config";
+
 import { PerfilOperador } from "@prisma/client";
 
 import { operadorInicialSchema, criarSenhaHash } from "../modules/auth/regrasAuth";
