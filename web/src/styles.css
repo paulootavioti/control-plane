@@ -1,0 +1,351 @@
+:root {
+  --fundo: #0f1216;
+  --superficie: #171b21;
+  --borda: #262c35;
+  --texto: #e8ebef;
+  --texto-fraco: #97a1ad;
+  --destaque: #d4a029;
+  --erro: #f0736a;
+  --raio: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 1.25rem;
+}
+
+h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem;
+}
+
+.selo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--destaque);
+  color: #1a1206;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Layout ------------------------------------------------------------- */
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--borda);
+  background: var(--superficie);
+  flex-wrap: wrap;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.marca small {
+  display: block;
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+.menu {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.menu a {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--raio);
+  color: var(--texto-fraco);
+  text-decoration: none;
+}
+
+.menu a:hover {
+  color: var(--texto);
+}
+
+.menu a.active {
+  background: var(--fundo);
+  color: var(--texto);
+}
+
+.operador {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.operador-dados {
+  text-align: right;
+  line-height: 1.2;
+}
+
+.operador-dados small {
+  display: block;
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+.botao-texto {
+  background: none;
+  border: 1px solid var(--borda);
+  color: var(--texto-fraco);
+  border-radius: var(--raio);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.botao-texto:hover {
+  color: var(--texto);
+}
+
+.conteudo {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 3rem;
+}
+
+/* Cartões e listas ---------------------------------------------------- */
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.cartao {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 1.1rem;
+}
+
+.contagens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.contagens li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.contagens strong {
+  font-size: 1.35rem;
+  min-width: 2.2rem;
+}
+
+.contagens span {
+  color: var(--texto-fraco);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th {
+  text-align: left;
+  color: var(--texto-fraco);
+  font-weight: 500;
+  padding-bottom: 0.4rem;
+}
+
+td {
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--borda);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.linha-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.etiqueta {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  color: var(--texto-fraco);
+  white-space: nowrap;
+}
+
+.etiqueta-ativo {
+  border-color: #2f5d3a;
+  color: #86d69b;
+}
+
+.etiqueta-suspenso,
+.etiqueta-erro_provisionamento {
+  border-color: #6b3330;
+  color: var(--erro);
+}
+
+.atributos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem 1.25rem;
+  margin: 0;
+}
+
+.atributos dt {
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.atributos dd {
+  margin: 0;
+  /* E-mails e documentos longos não cabem na coluna e, sem isto, transbordam
+     por cima da coluna vizinha — o grid não recorta o que passa da célula, e
+     o texto some por baixo do valor seguinte em vez de quebrar. */
+  overflow-wrap: anywhere;
+}
+
+.busca {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  color: var(--texto);
+  font: inherit;
+}
+
+.total,
+.carregando,
+.vazio {
+  color: var(--texto-fraco);
+}
+
+.mensagem {
+  margin: 0.75rem 0;
+}
+
+.mensagem-erro {
+  color: var(--erro);
+}
+
+.mensagem-vazio {
+  color: var(--texto-fraco);
+}
+
+/* Login --------------------------------------------------------------- */
+
+.login-pagina {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.login-cartao {
+  width: min(360px, 100%);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.login-marca {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.login-marca h1 {
+  margin: 0.3rem 0 0;
+  font-size: 1.2rem;
+}
+
+.login-marca p {
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: 0.85rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--texto-fraco);
+}
+
+input {
+  padding: 0.6rem 0.7rem;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  color: var(--texto);
+  font: inherit;
+}
+
+input:focus-visible,
+.busca:focus-visible {
+  outline: 2px solid var(--destaque);
+  outline-offset: 1px;
+}
+
+button[type="submit"] {
+  padding: 0.65rem;
+  background: var(--destaque);
+  color: #1a1206;
+  border: none;
+  border-radius: var(--raio);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
