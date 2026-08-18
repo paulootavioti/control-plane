@@ -5,7 +5,10 @@ import { Mensagem } from "../../components/Mensagem";
 import { api } from "../../services/api";
 import { formatarCentavos, formatarData, rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
+import { motivoParaNaoContratar } from "../../utils/contratacao";
 import { valoresVigentes, type Assinatura } from "../../utils/valoresDaAssinatura";
+import { useAuth } from "../../contexts/useAuth";
+import { FormularioContratacao } from "./FormularioContratacao";
 
 interface Contato {
   id: string;
@@ -221,9 +224,14 @@ function BlocoEventos({ eventos }: { eventos: EventoProvisionamento[] }) {
 
 export function Assinante() {
   const { assinanteId } = useParams();
+  const { podeVer } = useAuth();
   const [assinante, setAssinante] = useState<DetalheAssinante | null>(null);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
+
+  // `recarga` existe só para refazer a busca depois de uma contratação, sem
+  // precisar recarregar a página inteira e perder a posição de rolagem.
+  const [recarga, setRecarga] = useState(0);
 
   useEffect(() => {
     setCarregando(true);
@@ -237,7 +245,7 @@ export function Assinante() {
         setErro(getApiErrorMessage(erroDaBusca, "Não foi possível carregar o assinante."))
       )
       .finally(() => setCarregando(false));
-  }, [assinanteId]);
+  }, [assinanteId, recarga]);
 
   if (carregando) return <p className="carregando">Carregando…</p>;
   if (erro) {
@@ -281,7 +289,9 @@ export function Assinante() {
         ) : (
           <section className="cartao">
             <h2>Assinatura vigente</h2>
-            <p className="vazio">Nenhuma assinatura em vigor.</p>
+            <p className="vazio">
+              {motivoParaNaoContratar(assinante) ?? "Nenhuma assinatura em vigor."}
+            </p>
           </section>
         )}
 
@@ -337,6 +347,17 @@ export function Assinante() {
         </section>
 
         {assinante.ambiente && <BlocoEventos eventos={assinante.ambiente.eventos} />}
+
+        {/* Contratar é ação de OPERADOR e ADMIN_PLATAFORMA — os mesmos perfis
+            que a rota exige. Esconder para os demais evita oferecer um botão
+            que o servidor recusaria; ele continua sendo quem autoriza. */}
+        {motivoParaNaoContratar(assinante) === null &&
+          podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && (
+            <FormularioContratacao
+              assinanteId={assinante.id}
+              aoContratar={() => setRecarga((atual) => atual + 1)}
+            />
+          )}
 
         <section className="cartao cartao-largo">
           <h2>Faturas — últimas 12</h2>

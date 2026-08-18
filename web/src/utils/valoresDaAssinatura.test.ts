@@ -52,9 +52,10 @@ describe("valoresVigentes", () => {
     expect(valores.precoPorBlocoCentavos).toEqual({ valor: 3700, negociado: false });
   });
 
-  // Zero é acordo legítimo — cortesia, isenção. Tratado como "sem negociação",
-  // a tela mostraria R$ 37,00 para quem combinou não pagar nada.
-  it("respeita zero como valor negociado", () => {
+  // A API recusa zero, então isto trava a defesa, não um caso de uso: um zero
+  // que chegue por outro caminho precisa aparecer como zero. Tratado como "sem
+  // negociação", a tela mostraria R$ 37,00 para uma assinatura que diz 0.
+  it("mostra zero gravado em vez de cair no preço de tabela", () => {
     const valores = valoresVigentes(assinatura({ precoPorBlocoCentavosNegociado: 0 }));
 
     expect(valores.precoPorBlocoCentavos).toEqual({ valor: 0, negociado: true });

@@ -40,9 +40,13 @@ export interface ValoresVigentes {
 // veio de uma negociação. Exibir só o valor esconderia que houve acordo, e
 // exibir só o de tabela mostraria um preço que ninguém está pagando.
 //
-// `null` significa "sem negociação" e cai no valor do plano. Zero é um valor
-// negociado legítimo (cortesia), então a checagem é por `null`, nunca por
-// falsidade — `?? ` e não `||`.
+// `null` significa "sem negociação" e cai no valor do plano. A checagem é por
+// `null`, nunca por falsidade — `??` e não `||`.
+//
+// Hoje a API não deixa gravar zero (`z.number().int().positive()`), então essa
+// distinção é defesa, não caso de uso: se um zero chegar por outro caminho
+// (carga direta no banco, mudança futura no schema), a tela mostra o zero
+// gravado em vez de inventar o preço de tabela que ninguém combinou.
 function escolher(negociado: number | null, doPlano: number): ValorVigente {
   return negociado === null
     ? { valor: doPlano, negociado: false }
