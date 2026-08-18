@@ -10,7 +10,7 @@
   # para /api na própria origem — sem CORS, sem uma variável de URL para
   # manter em dia, e sem a possibilidade de o painel apontar para um Control
   # Plane diferente do que o serve.
-  command = "npm ci --include=dev && npm run build && cd web && npm ci --include=dev && npm run build"
+  command = "npm ci --include=dev && npm run build:completo"
   functions = "dist/netlify/functions"
   publish = "web/dist"
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { Mensagem } from "../../components/Mensagem";
 import { api } from "../../services/api";
@@ -116,7 +117,9 @@ export function Assinantes() {
               return (
                 <li key={assinante.id} className="cartao">
                   <div className="linha-titulo">
-                    <strong>{assinante.nomeFantasia}</strong>
+                    <Link to={`/assinantes/${assinante.id}`} className="link-titulo">
+                      {assinante.nomeFantasia}
+                    </Link>
                     <span className={`etiqueta etiqueta-${assinante.status.toLowerCase()}`}>
                       {rotularStatus(assinante.status)}
                     </span>

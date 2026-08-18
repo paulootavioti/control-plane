@@ -238,6 +238,15 @@ td {
   letter-spacing: 0.03em;
 }
 
+.atributos > div {
+  /* Item de grid não encolhe abaixo do próprio conteúdo (`min-width: auto`).
+     Sem isto, um valor longo e sem espaços — a tenantKey, um documento — dita
+     a largura da coluna, a coluna fica maior que o cartão e a página inteira
+     passa a rolar de lado no celular. Vale para todo contêiner de grid deste
+     app; onde houver `display: grid`, os filhos precisam de `min-width: 0`. */
+  min-width: 0;
+}
+
 .atributos dd {
   margin: 0;
   /* E-mails e documentos longos não cabem na coluna e, sem isto, transbordam
@@ -348,4 +357,154 @@ button[type="submit"] {
 button[type="submit"]:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Detalhe do assinante ------------------------------------------------ */
+
+.migalha {
+  color: var(--texto-fraco);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.migalha a,
+.link-titulo {
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.migalha a:hover,
+.link-titulo:hover {
+  text-decoration: underline;
+}
+
+.link-titulo {
+  font-weight: 700;
+}
+
+.grade-larga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Item de grid tem `min-width: auto`, ou seja, não encolhe abaixo do próprio
+   conteúdo. Sem isto, o cartão da tabela de faturas se recusa a ficar menor
+   que os 620px dela, o `overflow-x` do invólucro nunca chega a agir e é a
+   PÁGINA que passa a rolar de lado no celular. */
+.grade-larga > * {
+  min-width: 0;
+}
+
+.cartao-largo {
+  grid-column: 1 / -1;
+}
+
+.negociado,
+.alerta {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  color: var(--destaque);
+  white-space: nowrap;
+}
+
+.alerta {
+  color: var(--erro);
+  border-color: #6b3330;
+}
+
+.lista-simples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.lista-simples li {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.lista-simples span,
+.lista-simples small,
+.eventos small {
+  color: var(--texto-fraco);
+  font-size: 0.8rem;
+}
+
+.eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.eventos li {
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--borda);
+  display: grid;
+  gap: 0.1rem;
+  /* Mesma armadilha do `.grade-larga`: item de grid não encolhe abaixo do
+     próprio conteúdo. Aqui o efeito é a mensagem de erro do provisionamento
+     empurrando a página inteira de lado no celular.
+
+     `min-width: 0` precisa ir também nos FILHOS: o `li` já obedece, mas cada
+     parágrafo dentro dele é, por sua vez, item de grid com o mesmo padrão —
+     e `overflow-wrap` sozinho não os faz encolher. */
+  min-width: 0;
+}
+
+.eventos li > * {
+  min-width: 0;
+}
+
+.evento-falhou {
+  border-left-color: var(--erro);
+}
+
+.evento-linha {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+ /* `.alerta` é etiqueta curta e por isso não quebra linha. Uma FRASE precisa de
+   classe própria: reaproveitar a etiqueta aqui fazia o texto não quebrar e
+   empurrar a página inteira de lado no celular. */
+.evento-aviso {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--erro);
+}
+
+.evento-erro {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--erro);
+  overflow-wrap: anywhere;
+}
+
+code {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+/* Tabelas largas rolam dentro do próprio cartão, em vez de empurrar a página
+   inteira para os lados. */
+.tabela-rolavel {
+  overflow-x: auto;
+}
+
+.tabela-rolavel table {
+  min-width: 620px;
 }

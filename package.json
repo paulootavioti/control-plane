@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "NODE_ENV=development ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc -p tsconfig.build.json",
+    "build:painel": "cd web && npm ci --include=dev && npm run build",
+    "build:completo": "npm run build && npm run build:painel",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.mts",
