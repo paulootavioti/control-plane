@@ -1,0 +1,12 @@
+// Configuração usada só pelo build. A diferença para o tsconfig.json é a
+// exclusão dos arquivos .test.ts: o Netlify transforma cada arquivo em
+// dist/netlify/functions numa serverless function, e o ponto em
+// "provisionar-background.test" é caractere inválido em nome de function —
+// o deploy inteiro é abortado, mesmo com o restante compilando.
+//
+// A checagem de tipos dos testes não se perde: `npm run typecheck` continua
+// usando o tsconfig.json completo, e é o que a CI roda antes do build.
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

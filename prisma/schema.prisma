@@ -1,0 +1,374 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CONTROL_PLANE_DATABASE_URL")
+}
+
+enum StatusAssinante {
+  PROSPECT
+  EM_PROVISIONAMENTO
+  ATIVO
+  SUSPENSO
+  CANCELADO
+  ERRO_PROVISIONAMENTO
+}
+
+enum TipoContatoAssinante {
+  PROPRIETARIO
+  ADMINISTRATIVO
+  FINANCEIRO
+  TECNICO
+}
+
+enum StatusAssinatura {
+  TESTE
+  ATIVA
+  INADIMPLENTE
+  SUSPENSA
+  CANCELADA
+}
+
+enum StatusFatura {
+  RASCUNHO
+  ABERTA
+  PAGA
+  VENCIDA
+  CANCELADA
+  ESTORNADA
+}
+
+enum PerfilOperador {
+  OPERADOR
+  FINANCEIRO
+  SUPORTE
+  ADMIN_PLATAFORMA
+}
+
+enum StatusAmbienteTenant {
+  PENDENTE
+  CRIANDO_PROJETO
+  GRAVANDO_SEGREDO
+  APLICANDO_MIGRATIONS
+  EXECUTANDO_BOOTSTRAP
+  VALIDANDO
+  ATIVO
+  FALHOU
+  SUSPENSO
+  DESATIVADO
+}
+
+enum TipoEventoProvisionamento {
+  CRIAR_AMBIENTE
+  APLICAR_MIGRATIONS
+  ROTACIONAR_CREDENCIAL
+  SUSPENDER
+  REATIVAR
+}
+
+enum StatusEventoProvisionamento {
+  PENDENTE
+  EXECUTANDO
+  CONCLUIDO
+  FALHOU
+}
+
+enum StatusLicencaUnidade {
+  PENDENTE
+  ATIVA
+  ENCERRADA
+}
+
+model OperadorPlataforma {
+  id            String         @id @default(uuid()) @db.Uuid
+  nome          String
+  email         String         @unique
+  senhaHash     String
+  perfil        PerfilOperador
+  ativo         Boolean        @default(true)
+  versaoToken   Int            @default(1)
+  ultimoLoginEm DateTime?
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+  auditorias    AuditLogPlataforma[]
+
+  @@index([ativo, perfil])
+}
+
+model Assinante {
+  id            String           @id @default(uuid()) @db.Uuid
+  nomeFantasia  String
+  razaoSocial   String?
+  documento     String           @unique
+  emailCobranca String
+  telefone      String?
+  slug          String           @unique
+  status        StatusAssinante  @default(PROSPECT)
+  criadoEm      DateTime         @default(now())
+  atualizadoEm  DateTime         @updatedAt
+
+  contatos    ContatoAssinante[]
+  assinaturas Assinatura[]
+  faturas     Fatura[]
+  ambiente    AmbienteTenant?
+  licencas    LicencaUnidade[]
+  snapshotsContagem SnapshotContagem[]
+  auditorias   AuditLogPlataforma[]
+
+  @@index([status])
+}
+
+model AuditLogPlataforma {
+  id           String   @id @default(uuid()) @db.Uuid
+  operadorId   String   @db.Uuid
+  assinanteId  String?  @db.Uuid
+  origem       String   @db.VarChar(30)
+  acao         String   @db.VarChar(100)
+  alvoTipo     String   @db.VarChar(60)
+  alvoId       String
+  mudancas     Json?
+  ip           String?
+  userAgent    String?
+  criadoEm     DateTime @default(now())
+
+  operador  OperadorPlataforma @relation(fields: [operadorId], references: [id], onDelete: Restrict)
+  assinante Assinante?         @relation(fields: [assinanteId], references: [id], onDelete: SetNull)
+
+  @@index([assinanteId, criadoEm])
+  @@index([operadorId, criadoEm])
+  @@index([alvoTipo, alvoId])
+}
+
+model LicencaUnidade {
+  id                       String               @id @default(uuid()) @db.Uuid
+  assinanteId              String               @db.Uuid
+  tenantUnidadeId          String
+  nomeExibicao             String
+  status                   StatusLicencaUnidade @default(PENDENTE)
+  inicioCobrancaEm         DateTime?
+  encerramentoCobrancaEm   DateTime?
+  ultimaSincronizacaoEm    DateTime?
+  criadoEm                 DateTime             @default(now())
+  atualizadoEm             DateTime             @updatedAt
+
+  assinante Assinante @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  contagens SnapshotContagemItem[]
+
+  @@unique([assinanteId, tenantUnidadeId])
+  @@unique([id, assinanteId])
+  @@index([assinanteId, status])
+}
+
+model SnapshotContagem {
+  id               String   @id @default(uuid()) @db.Uuid
+  assinanteId      String   @db.Uuid
+  eventoExternoId  String
+  versaoContrato   Int      @default(1)
+  dataCorte        DateTime
+  recebidoEm       DateTime @default(now())
+
+  assinante Assinante              @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  itens      SnapshotContagemItem[]
+
+  @@unique([assinanteId, eventoExternoId])
+  @@unique([id, assinanteId])
+  @@index([assinanteId, dataCorte])
+}
+
+model SnapshotContagemItem {
+  id                 String @id @default(uuid()) @db.Uuid
+  snapshotId         String @db.Uuid
+  assinanteId        String @db.Uuid
+  licencaUnidadeId   String @db.Uuid
+  alunosAtivos       Int
+
+  snapshot SnapshotContagem @relation(fields: [snapshotId, assinanteId], references: [id, assinanteId], onDelete: Cascade)
+  licenca  LicencaUnidade   @relation(fields: [licencaUnidadeId, assinanteId], references: [id, assinanteId], onDelete: Restrict)
+
+  @@unique([snapshotId, licencaUnidadeId])
+  @@index([licencaUnidadeId])
+}
+
+model AmbienteTenant {
+  id                       String                @id @default(uuid()) @db.Uuid
+  assinanteId              String                @unique @db.Uuid
+  tenantKey                String                @unique @db.Uuid
+  status                   StatusAmbienteTenant @default(PENDENTE)
+  provider                 String                @default("NEON")
+  regiao                   String
+  providerProjectId        String?               @unique
+  providerBranchId         String?
+  providerEndpointId       String?
+  databaseName             String?
+  roleName                 String?
+  postgresVersion          Int?
+  secretRef                String?
+  chavePublicaIntegracao   String?
+  credentialVersion        Int?
+  schemaVersaoAtual        String?
+  schemaVersaoDesejada     String
+  ultimaMigrationEm        DateTime?
+  ultimoHealthCheckEm      DateTime?
+  ultimoBackupVerificadoEm DateTime?
+  ultimaRotacaoEm          DateTime?
+  revisaoConcessao         Int                   @default(0)
+  ultimaConcessaoEmitidaEm DateTime?
+  criadoEm                 DateTime              @default(now())
+  atualizadoEm             DateTime              @updatedAt
+
+  assinante Assinante                 @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  eventos   EventoProvisionamento[]
+
+  @@index([status])
+  @@index([schemaVersaoAtual, schemaVersaoDesejada])
+}
+
+model EventoProvisionamento {
+  id               String                       @id @default(uuid()) @db.Uuid
+  ambienteTenantId String                       @db.Uuid
+  tipo             TipoEventoProvisionamento
+  chaveIdempotencia String                      @unique
+  status           StatusEventoProvisionamento @default(PENDENTE)
+  etapaAtual       String?
+  tentativas       Int                          @default(0)
+  payload          Json?
+  erroSanitizado   String?
+  iniciadoEm       DateTime?
+  concluidoEm      DateTime?
+  proximaTentativaEm DateTime?
+  criadoEm         DateTime                     @default(now())
+  atualizadoEm     DateTime                     @updatedAt
+
+  ambiente AmbienteTenant @relation(fields: [ambienteTenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, proximaTentativaEm])
+  @@index([ambienteTenantId, criadoEm])
+}
+
+model ContatoAssinante {
+  id           String                @id @default(uuid()) @db.Uuid
+  assinanteId  String                @db.Uuid
+  nome         String
+  email        String?
+  telefone     String?
+  tipo         TipoContatoAssinante
+  principal    Boolean               @default(false)
+  criadoEm     DateTime              @default(now())
+  atualizadoEm DateTime              @updatedAt
+
+  assinante Assinante @relation(fields: [assinanteId], references: [id], onDelete: Cascade)
+
+  @@index([assinanteId, tipo])
+}
+
+model Plano {
+  id           String        @id @default(uuid()) @db.Uuid
+  nome         String        @unique
+  descricao    String?
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+
+  versoes PlanoVersao[]
+}
+
+// Uma versão contratada nunca é alterada: mudanças comerciais criam uma nova
+// linha com versão maior. A regra será protegida também pela camada de serviço.
+model PlanoVersao {
+  id                       String       @id @default(uuid()) @db.Uuid
+  planoId                  String       @db.Uuid
+  versao                   Int
+  vigenteDesde             DateTime
+  vigenteAte               DateTime?
+  alunosPorBloco           Int
+  precoPorBlocoCentavos    Int
+  blocosMinimosPorUnidade  Int          @default(1)
+  moeda                    String       @default("BRL") @db.Char(3)
+  recursos                 Json
+  metadadosComerciais      Json?
+  criadoEm                 DateTime     @default(now())
+
+  plano       Plano        @relation(fields: [planoId], references: [id], onDelete: Restrict)
+  assinaturas Assinatura[]
+
+  @@unique([planoId, versao])
+  @@index([planoId, vigenteDesde])
+}
+
+model Assinatura {
+  id                                  String            @id @default(uuid()) @db.Uuid
+  assinanteId                         String            @db.Uuid
+  planoVersaoId                       String            @db.Uuid
+  status                              StatusAssinatura  @default(TESTE)
+  inicioEm                            DateTime           @default(now())
+  testeAte                            DateTime?
+  canceladaEm                         DateTime?
+  encerradaEm                         DateTime?
+  diaVencimento                       Int               @default(10)
+  alunosPorBlocoNegociado             Int?
+  precoPorBlocoCentavosNegociado      Int?
+  blocosMinimosPorUnidadeNegociado    Int?
+  politicaCobranca                    Json?
+  criadoEm                            DateTime           @default(now())
+  atualizadoEm                        DateTime           @updatedAt
+
+  assinante   Assinante    @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  planoVersao PlanoVersao  @relation(fields: [planoVersaoId], references: [id], onDelete: Restrict)
+  faturas     Fatura[]
+
+  @@index([assinanteId, status])
+  @@index([planoVersaoId])
+  @@unique([id, assinanteId])
+}
+
+model Fatura {
+  id                    String        @id @default(uuid()) @db.Uuid
+  assinanteId           String        @db.Uuid
+  assinaturaId          String        @db.Uuid
+  competencia           String        @db.VarChar(7)
+  vencimentoEm          DateTime
+  status                StatusFatura @default(RASCUNHO)
+  subtotalCentavos      Int
+  descontoCentavos      Int           @default(0)
+  acrescimoCentavos     Int           @default(0)
+  totalCentavos         Int
+  moeda                 String        @default("BRL") @db.Char(3)
+  planoSnapshot         Json
+  condicoesSnapshot     Json?
+  gateway               String?
+  gatewayFaturaId       String?       @unique
+  emitidaEm             DateTime?
+  pagaEm                DateTime?
+  canceladaEm           DateTime?
+  estornadaEm           DateTime?
+  criadoEm              DateTime      @default(now())
+  atualizadoEm          DateTime      @updatedAt
+
+  assinante  Assinante   @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  assinatura Assinatura  @relation(fields: [assinaturaId, assinanteId], references: [id, assinanteId], onDelete: Restrict)
+  itens      FaturaItem[]
+
+  @@unique([assinaturaId, competencia])
+  @@index([assinanteId, status])
+  @@index([vencimentoEm, status])
+}
+
+model FaturaItem {
+  id                       String   @id @default(uuid()) @db.Uuid
+  faturaId                 String   @db.Uuid
+  tenantUnidadeId          String
+  nomeUnidade              String
+  alunosAtivos             Int
+  alunosPorBloco           Int
+  blocosCobrados           Int
+  precoPorBlocoCentavos    Int
+  valorCentavos            Int
+  criadoEm                 DateTime @default(now())
+
+  fatura Fatura @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+
+  @@unique([faturaId, tenantUnidadeId])
+}

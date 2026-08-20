@@ -1,0 +1,39 @@
+[build]
+  # `--include=dev` é obrigatório por causa do NODE_ENV=production abaixo: com
+  # ele o npm pula as devDependencies, e o build quebra em `tsc` com
+  # "TS2688: Cannot find type definition file for 'node'" — o `tsc` sobrevive
+  # como dependência transitiva, mas os @types não são instalados. Mesmo
+  # motivo do `npm ci --include=dev` no netlify.toml da raiz.
+  #
+  # O `web/` é o painel do operador. Ele é publicado pelo MESMO site da API,
+  # e não por um site à parte como os portais do tenant: assim as chamadas vão
+  # para /api na própria origem — sem CORS, sem uma variável de URL para
+  # manter em dia, e sem a possibilidade de o painel apontar para um Control
+  # Plane diferente do que o serve.
+  command = "npm ci --include=dev && npm run build:completo"
+  functions = "dist/netlify/functions"
+  publish = "web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NODE_ENV = "production"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Fallback de SPA. Precisa vir DEPOIS da regra de /api — o Netlify aplica a
+# primeira que casar, e invertendo a ordem toda chamada de API viraria o
+# index.html do painel.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "same-origin"
