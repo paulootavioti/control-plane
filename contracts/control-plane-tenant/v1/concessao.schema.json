@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sysbelt.com.br/contracts/control-plane-tenant/v1/concessao.schema.json",
+  "title": "Concessão de acesso do Tenant Plane",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["versao", "tenantKey", "revisao", "statusAcesso", "recursos", "emitidaEm", "expiraEm", "assinatura"],
+  "properties": {
+    "versao": { "const": 1 },
+    "tenantKey": { "type": "string", "format": "uuid" },
+    "revisao": { "type": "integer", "minimum": 1 },
+    "statusAcesso": { "enum": ["ATIVO", "SUSPENSO", "CANCELADO"] },
+    "recursos": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["WHATSAPP", "GATEWAY_AUTOMATICO", "CONTROLE_ACESSO"] }
+    },
+    "emitidaEm": { "type": "string", "format": "date-time" },
+    "expiraEm": { "type": "string", "format": "date-time" },
+    "assinatura": { "type": "string", "minLength": 1 }
+  }
+}
