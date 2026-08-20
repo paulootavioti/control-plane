@@ -314,6 +314,9 @@ parte configurada nos Tenant Planes.
 
 ## Netlify
 
-Crie um site separado apontando o **base directory** para `control-plane`.
-Configure `CONTROL_PLANE_DATABASE_URL` somente no ambiente desse site. O site
-das academias não deve receber essa variável.
+Este é um repositório independente: configure o site com o **base directory**
+vazio (raiz do repositório). Configure `CONTROL_PLANE_DATABASE_URL` somente no
+ambiente desse site. Os sites dos tenant planes não devem receber essa variável.
+
+O procedimento de migração do deploy existente está documentado em
+[`docs/CORTE-CONTROL-PLANE.md`](docs/CORTE-CONTROL-PLANE.md).
