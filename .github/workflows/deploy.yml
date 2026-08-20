@@ -1,0 +1,43 @@
+name: Deploy Control Plane
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-control-plane
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm run test
+      - run: npm run build:completo
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Conferir segredos do Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          faltando=""
+          [ -z "$NETLIFY_AUTH_TOKEN" ] && faltando="$faltando NETLIFY_AUTH_TOKEN"
+          [ -z "$NETLIFY_SITE_ID" ] && faltando="$faltando NETLIFY_SITE_ID"
+          if [ -n "$faltando" ]; then
+            echo "::error::Segredo(s) ausente(s):$faltando"
+            exit 1
+          fi
+      - run: npx netlify-cli@27 deploy --prod --dir=web/dist --functions=dist/netlify/functions
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
