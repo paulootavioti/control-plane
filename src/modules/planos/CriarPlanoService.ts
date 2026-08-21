@@ -3,6 +3,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
 
 export interface DadosNovoPlano {
+  produtoCodigo?: string;
   nome: string;
   descricao?: string;
   vigenteDesde: Date;
@@ -23,6 +24,7 @@ export class CriarPlanoService {
       return await this.db.$transaction(async (tx) => {
         const plano = await tx.plano.create({
           data: {
+            produtoCodigo: dados.produtoCodigo ?? "sysbelt",
             nome: dados.nome,
             descricao: dados.descricao ?? null,
             ativo: true,
@@ -42,6 +44,7 @@ export class CriarPlanoService {
           },
           select: {
             id: true,
+            produtoCodigo: true,
             nome: true,
             descricao: true,
             ativo: true,
@@ -73,6 +76,7 @@ export class CriarPlanoService {
             alvoId: plano.id,
             mudancas: {
               ativo: true,
+              produtoCodigo: plano.produtoCodigo,
               versao: versao.versao,
               vigenteDesde: versao.vigenteDesde.toISOString(),
               vigenteAte: versao.vigenteAte?.toISOString() ?? null,

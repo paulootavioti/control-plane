@@ -14,6 +14,7 @@ import { operadoresRoutes } from "./modules/operadores/routes";
 import { assinaturasRoutes } from "./modules/assinaturas/routes";
 import { contatosRoutes } from "./modules/contatos/routes";
 import { diretorioRoutes } from "./modules/diretorio/routes";
+import { billingRoutes } from "./modules/billing/routes";
 
 export const app = express();
 
@@ -34,6 +35,8 @@ app.use("/operadores", operadoresRoutes);
 app.use("/assinaturas", assinaturasRoutes);
 app.use("/contatos", contatosRoutes);
 app.use("/diretorio/v1/tenants", diretorioRoutes);
+app.use("/diretorio/v1/produtos/:produto/tenants", diretorioRoutes);
+app.use("/billing", billingRoutes);
 
 app.get("/health", (_request, response) => {
   response.status(200).json({

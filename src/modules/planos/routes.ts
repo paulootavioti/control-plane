@@ -13,6 +13,7 @@ import { ObterPlanoService } from "./ObterPlanoService";
 export const planosRoutes = Router();
 
 const planoSchemaBase = z.object({
+  produtoCodigo: z.enum(["sysbelt", "mecanix", "psyche"]).default("sysbelt"),
   nome: z.string().trim().min(2).max(120),
   descricao: z.string().trim().min(1).max(500).optional(),
   vigenteDesde: z.coerce.date(),
@@ -51,7 +52,7 @@ planosRoutes.post("/", autenticarOperador(["ADMIN_PLATAFORMA"]), async (request,
   }
 });
 
-const novaVersaoSchema = planoSchemaBase.omit({ nome: true, descricao: true }).refine(
+const novaVersaoSchema = planoSchemaBase.omit({ produtoCodigo: true, nome: true, descricao: true }).refine(
   validarVigencia,
   { message: "A vigência final precisa ser posterior à inicial.", path: ["vigenteAte"] },
 );

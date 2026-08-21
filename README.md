@@ -1,8 +1,14 @@
-# SysBelt Control Plane
+# Control Plane multiproduto
 
-Aplicação independente que administra assinantes, planos, assinaturas,
-provisionamento e a saúde comercial da plataforma B2B. Ela não armazena os
-dados operacionais das academias.
+Aplicação independente compartilhada por SysBelt, Mecanix e Psyché. Administra
+assinantes, planos, assinaturas, provisionamento e billing sem armazenar dados
+operacionais dos tenants.
+
+O PSP escolhido é o Mercado Pago e fica isolado por uma interface. Credenciais
+serão configuradas somente após o lançamento. Consulte
+[`docs/DECISOES-BILLING.md`](docs/DECISOES-BILLING.md),
+[`contracts/diretorio/v1`](contracts/diretorio/v1/README.md) e
+[`contracts/billing/v1`](contracts/billing/v1/README.md).
 
 ## Fronteiras
 
