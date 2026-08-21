@@ -32,6 +32,27 @@ do segredo é manual e só deve ocorrer depois da homologação do Mercado Pago.
 - reativação cancela passos pendentes e reabre somente o produto correspondente;
 - suspensão financeira do Psyché mantém a concessão clínica liberada.
 
+## Observabilidade e retomada manual
+
+Operadores `FINANCEIRO` e `ADMIN_PLATAFORMA` podem consultar contagens e a
+antiguidade das filas sem receber payloads, destinatários ou dados pessoais:
+
+```text
+GET /billing/operacao/resumo
+```
+
+Itens definitivamente falhos podem ser devolvidos à fila de forma atômica. A
+operação é auditada e uma segunda tentativa concorrente não duplica a retomada:
+
+```text
+POST /billing/operacao/webhooks/:eventoId/reprocessar
+POST /billing/operacao/notificacoes/:notificacaoId/reprocessar
+```
+
+Somente itens em `FALHOU` são elegíveis. Respostas `409` indicam que o item já
+mudou de estado e não deve ser forçado. A retomada não executa o item dentro da
+requisição; o worker continua responsável pelo processamento assíncrono.
+
 ## Notificações
 
 Notificações são gravadas em `NotificacaoBilling` com chave idempotente. Nesta

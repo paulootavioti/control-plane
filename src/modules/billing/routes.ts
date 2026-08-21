@@ -4,13 +4,65 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../shared/prisma";
 import { autenticarOperador } from "../auth/autenticarOperador";
+import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { IniciarCobrancaRecorrenteService } from "./IniciarCobrancaRecorrenteService";
+import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService";
+import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
+import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
 import { MercadoPagoHttp } from "./providers/MercadoPagoHttp";
 import { ReconciliarAssinaturaService } from "./reconciliacao/ReconciliarAssinaturaService";
 import { ReceberEventoWebhookService } from "./webhooks/ReceberEventoWebhookService";
 import { chaveEventoMercadoPago, verificarAssinaturaMercadoPago } from "./webhooks/verificarAssinaturaMercadoPago";
 
 export const billingRoutes = Router();
+
+billingRoutes.get(
+  "/operacao/resumo",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (_request, response) => response.json(await new ObterResumoBillingService(prisma).execute()),
+);
+
+billingRoutes.post(
+  "/operacao/webhooks/:eventoId/reprocessar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const eventoId = z.string().uuid().safeParse(request.params.eventoId);
+    if (!eventoId.success) return response.status(400).json({ codigo: "EVENTO_WEBHOOK_INVALIDO" });
+    try {
+      return response.json(await new ReprocessarWebhookBillingService(prisma)
+        .execute(eventoId.data, contextoAuditoria(request, response)));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "EVENTO_WEBHOOK_NAO_ENCONTRADO") {
+        return response.status(404).json({ codigo: erro.message });
+      }
+      if (erro instanceof Error && erro.message === "EVENTO_WEBHOOK_NAO_ELEGIVEL") {
+        return response.status(409).json({ codigo: erro.message });
+      }
+      throw erro;
+    }
+  },
+);
+
+billingRoutes.post(
+  "/operacao/notificacoes/:notificacaoId/reprocessar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const notificacaoId = z.string().uuid().safeParse(request.params.notificacaoId);
+    if (!notificacaoId.success) return response.status(400).json({ codigo: "NOTIFICACAO_BILLING_INVALIDA" });
+    try {
+      return response.json(await new ReprocessarNotificacaoBillingService(prisma)
+        .execute(notificacaoId.data, contextoAuditoria(request, response)));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "NOTIFICACAO_BILLING_NAO_ENCONTRADA") {
+        return response.status(404).json({ codigo: erro.message });
+      }
+      if (erro instanceof Error && erro.message === "NOTIFICACAO_BILLING_NAO_ELEGIVEL") {
+        return response.status(409).json({ codigo: erro.message });
+      }
+      throw erro;
+    }
+  },
+);
 
 const jsonPrisma = (valor: unknown) => JSON.parse(JSON.stringify(valor)) as Prisma.InputJsonValue;
 
