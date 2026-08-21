@@ -13,25 +13,32 @@ export class ReconciliarAssinaturaService {
   async execute(assinaturaId: string, agora = new Date()) {
     const local = await this.db.assinatura.findUnique({
       where: { id: assinaturaId },
-      select: { id: true, status: true, gatewayAssinaturaId: true },
+      select: { id: true, assinanteId: true, produtoCodigo: true, status: true, gatewayAssinaturaId: true },
     });
     if (!local?.gatewayAssinaturaId) throw new Error("ASSINATURA_SEM_VINCULO_PSP");
     const remota = await this.provedor.obterAssinatura(local.gatewayAssinaturaId);
     const destino = MAPA_ESTADOS[remota.status];
     if (!destino || destino === local.status) return { alterada: false, status: local.status, statusRemoto: remota.status };
-    await this.db.assinatura.update({
-      where: { id: local.id },
-      data: {
-        status: destino,
-        primeiraFalhaPagamentoEm: destino === "INADIMPLENTE" ? agora : null,
-        canceladaEm: destino === "CANCELADA" ? agora : undefined,
-      },
-    });
-    if (destino === "ATIVA") {
-      await this.db.tentativaDunning.updateMany({
-        where: { assinaturaId: local.id, status: "PENDENTE" }, data: { status: "CANCELADA" },
+    await this.db.$transaction(async (tx) => {
+      await tx.assinatura.update({
+        where: { id: local.id },
+        data: {
+          status: destino,
+          primeiraFalhaPagamentoEm: destino === "INADIMPLENTE" ? agora : null,
+          canceladaEm: destino === "CANCELADA" ? agora : undefined,
+        },
       });
-    }
+      if (destino === "ATIVA") {
+        await tx.tentativaDunning.updateMany({
+          where: { assinaturaId: local.id, status: { in: ["PENDENTE", "EXECUTANDO"] } },
+          data: { status: "CANCELADA" },
+        });
+        await tx.tenantProduto.updateMany({
+          where: { assinanteId: local.assinanteId, produtoCodigo: local.produtoCodigo, status: "SUSPENSO_FINANCEIRO" },
+          data: { status: "ATIVO" },
+        });
+      }
+    });
     return { alterada: true, status: destino, statusRemoto: remota.status };
   }
 }

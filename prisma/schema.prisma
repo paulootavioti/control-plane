@@ -97,12 +97,14 @@ enum StatusTenantProduto {
 
 enum StatusEventoWebhook {
   RECEBIDO
+  PROCESSANDO
   PROCESSADO
   FALHOU
 }
 
 enum StatusTentativaDunning {
   PENDENTE
+  EXECUTANDO
   EXECUTADA
   CANCELADA
   FALHOU
@@ -113,6 +115,13 @@ enum StatusDocumentoFiscal {
   EMITIDO
   CANCELADO
   FALHOU
+}
+
+enum StatusNotificacaoBilling {
+  PENDENTE
+  ENVIADA
+  FALHOU
+  CANCELADA
 }
 
 model Produto {
@@ -394,11 +403,12 @@ model Assinatura {
   criadoEm                         DateTime         @default(now())
   atualizadoEm                     DateTime         @updatedAt
 
-  assinante         Assinante          @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
-  planoVersao       PlanoVersao        @relation(fields: [planoVersaoId], references: [id], onDelete: Restrict)
-  produto           Produto            @relation(fields: [produtoCodigo], references: [codigo], onDelete: Restrict)
-  faturas           Fatura[]
-  tentativasDunning TentativaDunning[]
+  assinante           Assinante            @relation(fields: [assinanteId], references: [id], onDelete: Restrict)
+  planoVersao         PlanoVersao          @relation(fields: [planoVersaoId], references: [id], onDelete: Restrict)
+  produto             Produto              @relation(fields: [produtoCodigo], references: [codigo], onDelete: Restrict)
+  faturas             Fatura[]
+  tentativasDunning   TentativaDunning[]
+  notificacoesBilling NotificacaoBilling[]
 
   @@unique([id, assinanteId])
   @@index([assinanteId, status])
@@ -440,32 +450,34 @@ model Fatura {
 }
 
 model EventoWebhookPagamento {
-  id              String              @id @default(uuid()) @db.Uuid
-  provedor        String              @db.VarChar(30)
-  eventoExternoId String
-  tipo            String              @db.VarChar(80)
-  acao            String              @db.VarChar(100)
-  payloadBruto    Json
-  status          StatusEventoWebhook @default(RECEBIDO)
-  tentativas      Int                 @default(0)
-  erroSanitizado  String?
-  recebidoEm      DateTime            @default(now())
-  processadoEm    DateTime?
+  id                      String              @id @default(uuid()) @db.Uuid
+  provedor                String              @db.VarChar(30)
+  eventoExternoId         String
+  tipo                    String              @db.VarChar(80)
+  acao                    String              @db.VarChar(100)
+  payloadBruto            Json
+  status                  StatusEventoWebhook @default(RECEBIDO)
+  tentativas              Int                 @default(0)
+  erroSanitizado          String?
+  recebidoEm              DateTime            @default(now())
+  processamentoIniciadoEm DateTime?
+  processadoEm            DateTime?
 
   @@unique([provedor, eventoExternoId])
   @@index([status, recebidoEm])
 }
 
 model TentativaDunning {
-  id             String                 @id @default(uuid()) @db.Uuid
-  assinaturaId   String                 @db.Uuid
-  diaRegua       Int
-  acao           String                 @db.VarChar(40)
-  status         StatusTentativaDunning @default(PENDENTE)
-  agendadaPara   DateTime
-  executadaEm    DateTime?
-  erroSanitizado String?
-  criadoEm       DateTime               @default(now())
+  id                 String                 @id @default(uuid()) @db.Uuid
+  assinaturaId       String                 @db.Uuid
+  diaRegua           Int
+  acao               String                 @db.VarChar(40)
+  status             StatusTentativaDunning @default(PENDENTE)
+  agendadaPara       DateTime
+  executadaEm        DateTime?
+  execucaoIniciadaEm DateTime?
+  erroSanitizado     String?
+  criadoEm           DateTime               @default(now())
 
   assinatura Assinatura @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
 
@@ -487,6 +499,26 @@ model DocumentoFiscal {
   atualizadoEm       DateTime              @updatedAt
 
   fatura Fatura @relation(fields: [faturaId], references: [id], onDelete: Restrict)
+}
+
+model NotificacaoBilling {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  assinaturaId       String                   @db.Uuid
+  chaveIdempotencia  String                   @unique
+  tipo               String                   @db.VarChar(60)
+  destinatario       String
+  dados              Json
+  status             StatusNotificacaoBilling @default(PENDENTE)
+  tentativas         Int                      @default(0)
+  proximaTentativaEm DateTime                 @default(now())
+  enviadaEm          DateTime?
+  erroSanitizado     String?
+  criadoEm           DateTime                 @default(now())
+  atualizadoEm       DateTime                 @updatedAt
+
+  assinatura Assinatura @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
+
+  @@index([status, proximaTentativaEm])
 }
 
 model FaturaItem {
