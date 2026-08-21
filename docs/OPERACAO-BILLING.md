@@ -39,6 +39,7 @@ antiguidade das filas sem receber payloads, destinatários ou dados pessoais:
 
 ```text
 GET /billing/operacao/resumo
+GET /billing/operacao/falhas?limite=20
 ```
 
 Itens definitivamente falhos podem ser devolvidos à fila de forma atômica. A
@@ -52,6 +53,8 @@ POST /billing/operacao/notificacoes/:notificacaoId/reprocessar
 Somente itens em `FALHOU` são elegíveis. Respostas `409` indicam que o item já
 mudou de estado e não deve ser forçado. A retomada não executa o item dentro da
 requisição; o worker continua responsável pelo processamento assíncrono.
+O painel apresenta essas informações na rota `/billing`, disponível somente
+para os mesmos perfis autorizados pela API.
 
 ## Notificações
 
