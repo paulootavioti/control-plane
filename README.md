@@ -10,6 +10,9 @@ serão configuradas somente após o lançamento. Consulte
 [`contracts/diretorio/v1`](contracts/diretorio/v1/README.md) e
 [`contracts/billing/v1`](contracts/billing/v1/README.md).
 
+Para execução das filas, leases e reconciliação, consulte
+[`docs/OPERACAO-BILLING.md`](docs/OPERACAO-BILLING.md).
+
 ## Fronteiras
 
 - possui banco PostgreSQL e credenciais próprios;

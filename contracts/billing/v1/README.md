@@ -34,3 +34,6 @@ antes de nova cobrança para não duplicar retentativas automáticas.
 `POST /billing/test/eventos` simula um evento sem chamar o PSP. Exige
 `BILLING_TEST_EVENTS_ENABLED=true` e `x-control-plane-worker-secret`; deve ficar
 desabilitado em produção.
+
+O processamento assíncrono e a recuperação de leases estão documentados em
+[`docs/OPERACAO-BILLING.md`](../../../docs/OPERACAO-BILLING.md).
