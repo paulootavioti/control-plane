@@ -7,6 +7,7 @@ import { autenticarOperador } from "../auth/autenticarOperador";
 import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { IniciarCobrancaRecorrenteService } from "./IniciarCobrancaRecorrenteService";
 import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService";
+import { ListarFalhasBillingService } from "./operacao/ListarFalhasBillingService";
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
 import { MercadoPagoHttp } from "./providers/MercadoPagoHttp";
@@ -15,6 +16,20 @@ import { ReceberEventoWebhookService } from "./webhooks/ReceberEventoWebhookServ
 import { chaveEventoMercadoPago, verificarAssinaturaMercadoPago } from "./webhooks/verificarAssinaturaMercadoPago";
 
 export const billingRoutes = Router();
+
+const falhasSchema = z.object({
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+}).strict();
+
+billingRoutes.get(
+  "/operacao/falhas",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = falhasSchema.safeParse(request.query);
+    if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de falhas inválidos." });
+    return response.json(await new ListarFalhasBillingService(prisma).execute(filtros.data.limite));
+  },
+);
 
 billingRoutes.get(
   "/operacao/resumo",

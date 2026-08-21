@@ -4,6 +4,7 @@ import { Layout } from "../components/Layout";
 import { Assinante } from "../pages/Assinante";
 import { Assinantes } from "../pages/Assinantes";
 import { Dashboard } from "../pages/Dashboard";
+import { Billing } from "../pages/Billing";
 import { Login } from "../pages/Login";
 import { PrivateRoute } from "./PrivateRoute";
 
@@ -24,6 +25,7 @@ export function AppRoutes() {
           <Route index element={<Dashboard />} />
           <Route path="assinantes" element={<Assinantes />} />
           <Route path="assinantes/:assinanteId" element={<Assinante />} />
+          <Route path="billing" element={<PrivateRoute perfis={["FINANCEIRO", "ADMIN_PLATAFORMA"]}><Billing /></PrivateRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

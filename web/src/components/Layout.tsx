@@ -30,6 +30,9 @@ export function Layout() {
             </NavLink>
           )}
           <NavLink to="/assinantes">Assinantes</NavLink>
+          {podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) && (
+            <NavLink to="/billing">Billing</NavLink>
+          )}
         </nav>
 
         <div className="operador">
