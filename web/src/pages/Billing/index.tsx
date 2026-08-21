@@ -8,7 +8,8 @@ interface ResumoFila { recebidos?: number; processando?: number; pendentes?: num
 interface Resumo { consultadoEm: string; webhooks: ResumoFila; dunning: ResumoFila; notificacoes: ResumoFila }
 interface WebhookFalho { id: string; tipo: string; acao: string; tentativas: number; erroSanitizado: string | null; recebidoEm: string }
 interface NotificacaoFalha { id: string; tipo: string; tentativas: number; erroSanitizado: string | null; criadoEm: string }
-interface Falhas { webhooks: WebhookFalho[]; notificacoes: NotificacaoFalha[]; limite: number }
+interface DunningFalho { id: string; diaRegua: number; acao: string; erroSanitizado: string | null; agendadaPara: string; assinatura: { id: string; status: string } }
+interface Falhas { webhooks: WebhookFalho[]; dunning: DunningFalho[]; notificacoes: NotificacaoFalha[]; limite: number }
 
 function dataHora(valor: string) {
   const data = new Date(valor);
@@ -45,7 +46,7 @@ export function Billing() {
 
   useEffect(() => { void carregar(); }, [carregar]);
 
-  async function reprocessar(tipo: "webhooks" | "notificacoes", id: string) {
+  async function reprocessar(tipo: "webhooks" | "dunning" | "notificacoes", id: string) {
     if (!window.confirm("Confirma a devolução deste item à fila de processamento?")) return;
     setProcessando(id); setErro(""); setSucesso("");
     try {
@@ -66,6 +67,7 @@ export function Billing() {
     <div className="grade-larga secao-operacional">
       <section className="cartao"><h2>Webhooks falhos</h2>{falhas.webhooks.length === 0 ? <p className="vazio">Nenhum webhook falho.</p> : <ul className="eventos">{falhas.webhooks.map(item => <li className="evento-falhou" key={item.id}><div className="evento-linha"><strong>{item.tipo}</strong><span>{item.acao}</span></div><small>{dataHora(item.recebidoEm)} · {item.tentativas} tentativas</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("webhooks", item.id)}>Reprocessar</button></li>)}</ul>}</section>
       <section className="cartao"><h2>Notificações falhas</h2>{falhas.notificacoes.length === 0 ? <p className="vazio">Nenhuma notificação falha.</p> : <ul className="eventos">{falhas.notificacoes.map(item => <li className="evento-falhou" key={item.id}><strong>{item.tipo}</strong><small>{dataHora(item.criadoEm)} · {item.tentativas} tentativas</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("notificacoes", item.id)}>Reprocessar</button></li>)}</ul>}</section>
+      <section className="cartao"><h2>Dunning falho</h2>{falhas.dunning.length === 0 ? <p className="vazio">Nenhum passo de dunning falho.</p> : <ul className="eventos">{falhas.dunning.map(item => <li className="evento-falhou" key={item.id}><div className="evento-linha"><strong>Dia {item.diaRegua}</strong><span>{item.acao}</span></div><small>{dataHora(item.agendadaPara)} · assinatura {item.assinatura.status}</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("dunning", item.id)}>Reprocessar</button></li>)}</ul>}</section>
     </div>
   </>;
 }
