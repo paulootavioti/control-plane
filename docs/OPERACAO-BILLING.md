@@ -47,6 +47,7 @@ operação é auditada e uma segunda tentativa concorrente não duplica a retoma
 
 ```text
 POST /billing/operacao/webhooks/:eventoId/reprocessar
+POST /billing/operacao/dunning/:tentativaId/reprocessar
 POST /billing/operacao/notificacoes/:notificacaoId/reprocessar
 ```
 
@@ -55,6 +56,8 @@ mudou de estado e não deve ser forçado. A retomada não executa o item dentro 
 requisição; o worker continua responsável pelo processamento assíncrono.
 O painel apresenta essas informações na rota `/billing`, disponível somente
 para os mesmos perfis autorizados pela API.
+Ao retomar dunning, a assinatura precisa continuar elegível. A ação apenas
+reagenda o passo; antes de executá-lo, o worker reconcilia novamente o PSP.
 
 ## Notificações
 

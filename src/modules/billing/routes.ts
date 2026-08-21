@@ -9,6 +9,7 @@ import { IniciarCobrancaRecorrenteService } from "./IniciarCobrancaRecorrenteSer
 import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService";
 import { ListarFalhasBillingService } from "./operacao/ListarFalhasBillingService";
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
+import { ReprocessarDunningBillingService } from "./operacao/ReprocessarDunningBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
 import { MercadoPagoHttp } from "./providers/MercadoPagoHttp";
 import { ReconciliarAssinaturaService } from "./reconciliacao/ReconciliarAssinaturaService";
@@ -35,6 +36,23 @@ billingRoutes.get(
   "/operacao/resumo",
   autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
   async (_request, response) => response.json(await new ObterResumoBillingService(prisma).execute()),
+);
+
+billingRoutes.post(
+  "/operacao/dunning/:tentativaId/reprocessar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const tentativaId = z.string().uuid().safeParse(request.params.tentativaId);
+    if (!tentativaId.success) return response.status(400).json({ codigo: "TENTATIVA_DUNNING_INVALIDA" });
+    try {
+      return response.json(await new ReprocessarDunningBillingService(prisma)
+        .execute(tentativaId.data, contextoAuditoria(request, response)));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "TENTATIVA_DUNNING_NAO_ENCONTRADA") return response.status(404).json({ codigo: erro.message });
+      if (erro instanceof Error && ["TENTATIVA_DUNNING_NAO_ELEGIVEL", "ASSINATURA_NAO_ELEGIVEL"].includes(erro.message)) return response.status(409).json({ codigo: erro.message });
+      throw erro;
+    }
+  },
 );
 
 billingRoutes.post(

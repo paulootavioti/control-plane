@@ -4,7 +4,7 @@ export class ListarFalhasBillingService {
   constructor(private readonly db: PrismaClient) {}
 
   async execute(limite = 20) {
-    const [webhooks, notificacoes] = await Promise.all([
+    const [webhooks, dunning, notificacoes] = await Promise.all([
       this.db.eventoWebhookPagamento.findMany({
         where: { status: "FALHOU" },
         orderBy: { recebidoEm: "asc" },
@@ -12,6 +12,16 @@ export class ListarFalhasBillingService {
         select: {
           id: true, tipo: true, acao: true, tentativas: true,
           erroSanitizado: true, recebidoEm: true, processadoEm: true,
+        },
+      }),
+      this.db.tentativaDunning.findMany({
+        where: { status: "FALHOU" },
+        orderBy: { agendadaPara: "asc" },
+        take: limite,
+        select: {
+          id: true, diaRegua: true, acao: true, erroSanitizado: true,
+          agendadaPara: true, criadoEm: true,
+          assinatura: { select: { id: true, assinanteId: true, status: true } },
         },
       }),
       this.db.notificacaoBilling.findMany({
@@ -24,6 +34,6 @@ export class ListarFalhasBillingService {
         },
       }),
     ]);
-    return { webhooks, notificacoes, limite };
+    return { webhooks, dunning, notificacoes, limite };
   }
 }
