@@ -26,24 +26,25 @@ export class ContratarAssinaturaService {
         if (!assinante) throw new Error("ASSINANTE_NAO_ENCONTRADO");
         if (assinante.status !== "PROSPECT") throw new Error("ASSINANTE_NAO_ELEGIVEL");
 
-        const corrente = await tx.assinatura.findFirst({
-          where: { assinanteId, encerradaEm: null }, select: { id: true },
-        });
-        if (corrente) throw new Error("ASSINATURA_CORRENTE_EXISTE");
-
         const planoVersao = await tx.planoVersao.findUnique({
           where: { id: dados.planoVersaoId },
-          select: { id: true, vigenteDesde: true, vigenteAte: true, plano: { select: { ativo: true } } },
+          select: { id: true, vigenteDesde: true, vigenteAte: true, plano: { select: { ativo: true, produtoCodigo: true } } },
         });
         if (!planoVersao || !planoVersao.plano.ativo || planoVersao.vigenteDesde > agora ||
           (planoVersao.vigenteAte && planoVersao.vigenteAte <= agora)) {
           throw new Error("PLANO_VERSAO_NAO_ELEGIVEL");
         }
 
+        const corrente = await tx.assinatura.findFirst({
+          where: { assinanteId, produtoCodigo: planoVersao.plano.produtoCodigo, encerradaEm: null }, select: { id: true },
+        });
+        if (corrente) throw new Error("ASSINATURA_CORRENTE_EXISTE");
+
         const assinatura = await tx.assinatura.create({
           data: {
             assinanteId,
             planoVersaoId: planoVersao.id,
+            produtoCodigo: planoVersao.plano.produtoCodigo,
             status: dados.status,
             inicioEm: agora,
             testeAte: dados.status === "TESTE" ? dados.testeAte : null,
