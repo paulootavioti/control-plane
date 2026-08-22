@@ -13,6 +13,9 @@ serão configuradas somente após o lançamento. Consulte
 Para execução das filas, leases e reconciliação, consulte
 [`docs/OPERACAO-BILLING.md`](docs/OPERACAO-BILLING.md).
 
+Migrações de produção não são executadas pelo deploy. Use somente o workflow
+manual protegido descrito em [`docs/MIGRACOES.md`](docs/MIGRACOES.md).
+
 O workflow do billing possui cadência de 15 minutos, mas permanece inerte até
 `BILLING_WORKER_SCHEDULE_ENABLED=true`. A habilitação depende da homologação e
 do checklist operacional documentado.

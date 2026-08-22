@@ -94,7 +94,7 @@ a flag deve permanecer `false`.
 
 Antes de definir `BILLING_WORKER_ENABLED=true`:
 
-1. aplicar migrações e validar backup;
+1. validar backup e aplicar migrações pelo workflow `Migrations Control Plane`;
 2. configurar token e webhook secret do Mercado Pago;
 3. cadastrar o webhook HTTPS no PSP;
 4. realizar evento de teste e confirmar persistência/reconciliação;
