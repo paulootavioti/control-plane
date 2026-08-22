@@ -125,6 +125,13 @@ enum StatusNotificacaoBilling {
   CANCELADA
 }
 
+enum StatusExecucaoWorkerBilling {
+  EXECUTANDO
+  SUCESSO
+  PARCIAL
+  FALHOU
+}
+
 model Produto {
   codigo                      String                      @id @db.VarChar(30)
   nome                        String
@@ -521,6 +528,23 @@ model NotificacaoBilling {
   assinatura Assinatura @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
 
   @@index([status, proximaTentativaEm])
+}
+
+model ExecucaoWorkerBilling {
+  id              String                       @id @default(uuid()) @db.Uuid
+  status          StatusExecucaoWorkerBilling  @default(EXECUTANDO)
+  limite          Int
+  eventos         Int                          @default(0)
+  dunning         Int                          @default(0)
+  reconciliacoes  Int                          @default(0)
+  notificacoes    Int                          @default(0)
+  falhas          Int                          @default(0)
+  erroSanitizado  String?
+  iniciadoEm      DateTime                     @default(now())
+  concluidoEm     DateTime?
+
+  @@index([iniciadoEm])
+  @@index([status, iniciadoEm])
 }
 
 model FaturaItem {

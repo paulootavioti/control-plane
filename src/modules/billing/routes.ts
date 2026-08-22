@@ -8,6 +8,7 @@ import { contextoAuditoria } from "../auditoria/contextoAuditoria";
 import { IniciarCobrancaRecorrenteService } from "./IniciarCobrancaRecorrenteService";
 import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService";
 import { ListarFalhasBillingService } from "./operacao/ListarFalhasBillingService";
+import { ListarExecucoesWorkerBillingService } from "./operacao/ListarExecucoesWorkerBillingService";
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
 import { ReprocessarDunningBillingService } from "./operacao/ReprocessarDunningBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
@@ -21,6 +22,16 @@ export const billingRoutes = Router();
 const falhasSchema = z.object({
   limite: z.coerce.number().int().min(1).max(100).default(20),
 }).strict();
+
+billingRoutes.get(
+  "/operacao/execucoes",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const filtros = falhasSchema.safeParse(request.query);
+    if (!filtros.success) return response.status(400).json({ mensagem: "Filtros de execuções inválidos." });
+    return response.json(await new ListarExecucoesWorkerBillingService(prisma).execute(filtros.data.limite));
+  },
+);
 
 billingRoutes.get(
   "/operacao/falhas",

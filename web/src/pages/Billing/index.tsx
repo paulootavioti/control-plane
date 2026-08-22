@@ -10,6 +10,7 @@ interface WebhookFalho { id: string; tipo: string; acao: string; tentativas: num
 interface NotificacaoFalha { id: string; tipo: string; tentativas: number; erroSanitizado: string | null; criadoEm: string }
 interface DunningFalho { id: string; diaRegua: number; acao: string; erroSanitizado: string | null; agendadaPara: string; assinatura: { id: string; status: string } }
 interface Falhas { webhooks: WebhookFalho[]; dunning: DunningFalho[]; notificacoes: NotificacaoFalha[]; limite: number }
+interface ExecucaoWorker { id: string; status: string; limite: number; eventos: number; dunning: number; reconciliacoes: number; notificacoes: number; falhas: number; erroSanitizado: string | null; iniciadoEm: string; concluidoEm: string | null }
 
 function dataHora(valor: string) {
   const data = new Date(valor);
@@ -26,18 +27,21 @@ function CartaoFila({ titulo, dados }: { titulo: string; dados: ResumoFila }) {
 export function Billing() {
   const [resumo, setResumo] = useState<Resumo | null>(null);
   const [falhas, setFalhas] = useState<Falhas | null>(null);
+  const [execucoes, setExecucoes] = useState<ExecucaoWorker[]>([]);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [processando, setProcessando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     try {
-      const [resumoResposta, falhasResposta] = await Promise.all([
+      const [resumoResposta, falhasResposta, execucoesResposta] = await Promise.all([
         api.get<Resumo>("/billing/operacao/resumo"),
         api.get<Falhas>("/billing/operacao/falhas"),
+        api.get<ExecucaoWorker[]>("/billing/operacao/execucoes?limite=10"),
       ]);
       setResumo(resumoResposta.data);
       setFalhas(falhasResposta.data);
+      setExecucoes(execucoesResposta.data);
       setErro("");
     } catch (erroDaBusca) {
       setErro(getApiErrorMessage(erroDaBusca, "Não foi possível carregar a operação do billing."));
@@ -65,6 +69,7 @@ export function Billing() {
     <Mensagem texto={erro} /><Mensagem texto={sucesso} tipo="vazio" />
     <div className="grade"><CartaoFila titulo="Webhooks" dados={resumo.webhooks} /><CartaoFila titulo="Dunning" dados={resumo.dunning} /><CartaoFila titulo="Notificações" dados={resumo.notificacoes} /></div>
     <div className="grade-larga secao-operacional">
+      <section className="cartao cartao-largo"><h2>Últimas execuções do worker</h2>{execucoes.length === 0 ? <p className="vazio">Nenhuma execução registrada.</p> : <div className="tabela-rolavel"><table><thead><tr><th>Início</th><th>Status</th><th>Eventos</th><th>Dunning</th><th>Reconciliações</th><th>Notificações</th><th>Falhas</th></tr></thead><tbody>{execucoes.map(item => <tr key={item.id}><td>{dataHora(item.iniciadoEm)}</td><td>{item.status}</td><td>{item.eventos}</td><td>{item.dunning}</td><td>{item.reconciliacoes}</td><td>{item.notificacoes}</td><td>{item.falhas}</td></tr>)}</tbody></table></div>}</section>
       <section className="cartao"><h2>Webhooks falhos</h2>{falhas.webhooks.length === 0 ? <p className="vazio">Nenhum webhook falho.</p> : <ul className="eventos">{falhas.webhooks.map(item => <li className="evento-falhou" key={item.id}><div className="evento-linha"><strong>{item.tipo}</strong><span>{item.acao}</span></div><small>{dataHora(item.recebidoEm)} · {item.tentativas} tentativas</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("webhooks", item.id)}>Reprocessar</button></li>)}</ul>}</section>
       <section className="cartao"><h2>Notificações falhas</h2>{falhas.notificacoes.length === 0 ? <p className="vazio">Nenhuma notificação falha.</p> : <ul className="eventos">{falhas.notificacoes.map(item => <li className="evento-falhou" key={item.id}><strong>{item.tipo}</strong><small>{dataHora(item.criadoEm)} · {item.tentativas} tentativas</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("notificacoes", item.id)}>Reprocessar</button></li>)}</ul>}</section>
       <section className="cartao"><h2>Dunning falho</h2>{falhas.dunning.length === 0 ? <p className="vazio">Nenhum passo de dunning falho.</p> : <ul className="eventos">{falhas.dunning.map(item => <li className="evento-falhou" key={item.id}><div className="evento-linha"><strong>Dia {item.diaRegua}</strong><span>{item.acao}</span></div><small>{dataHora(item.agendadaPara)} · assinatura {item.assinatura.status}</small>{item.erroSanitizado && <p className="evento-erro">{item.erroSanitizado}</p>}<button className="botao-acao" disabled={processando === item.id} onClick={() => void reprocessar("dunning", item.id)}>Reprocessar</button></li>)}</ul>}</section>
