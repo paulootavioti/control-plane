@@ -41,6 +41,7 @@ antiguidade das filas sem receber payloads, destinatários ou dados pessoais:
 ```text
 GET /billing/operacao/resumo
 GET /billing/operacao/falhas?limite=20
+GET /billing/operacao/execucoes?limite=20
 ```
 
 Itens definitivamente falhos podem ser devolvidos à fila de forma atômica. A
@@ -57,6 +58,9 @@ mudou de estado e não deve ser forçado. A retomada não executa o item dentro 
 requisição; o worker continua responsável pelo processamento assíncrono.
 O painel apresenta essas informações na rota `/billing`, disponível somente
 para os mesmos perfis autorizados pela API.
+Cada chamada autenticada do worker registra início, conclusão, contadores e
+resultado (`SUCESSO`, `PARCIAL` ou `FALHOU`). O histórico não contém payloads,
+destinatários ou segredos.
 Ao retomar dunning, a assinatura precisa continuar elegível. A ação apenas
 reagenda o passo; antes de executá-lo, o worker reconcilia novamente o PSP.
 

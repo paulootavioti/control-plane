@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { executarCicloBilling } from "../../src/modules/billing/worker/executarCicloBilling";
+import { executarCicloBillingRegistrado } from "../../src/modules/billing/worker/executarCicloBillingRegistrado";
 
 function autorizado(recebido: string | undefined, esperado: string | undefined): boolean {
   if (!recebido || !esperado) return false;
@@ -15,7 +15,7 @@ function tamanhoLote(): number {
 
 export async function handler(
   event: { headers: Record<string, string | undefined> },
-  executar: typeof executarCicloBilling = executarCicloBilling,
+  executar: typeof executarCicloBillingRegistrado = executarCicloBillingRegistrado,
 ) {
   if (!autorizado(event.headers["x-control-plane-worker-secret"], process.env.CONTROL_PLANE_WORKER_SECRET)) {
     return { statusCode: 401, body: "Não autorizado" };
