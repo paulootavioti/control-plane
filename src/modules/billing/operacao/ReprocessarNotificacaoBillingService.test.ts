@@ -27,7 +27,7 @@ describe("reprocessamento manual de notificação", () => {
       where: { id: "n1", status: "FALHOU" },
       data: {
         status: "PENDENTE", tentativas: 0, erroSanitizado: null,
-        proximaTentativaEm: agora, enviadaEm: null,
+        proximaTentativaEm: agora, enviadaEm: null, processamentoIniciadoEm: null,
       },
     });
     expect(tx.auditLogPlataforma.create).toHaveBeenCalledWith({ data: expect.objectContaining({

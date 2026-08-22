@@ -16,7 +16,7 @@ describe("executarCicloBilling", () => {
     };
     const provedor = { obterAssinatura: vi.fn().mockResolvedValue({ id: "sub-1", status: "authorized", referenciaExterna: "ass-1" }) };
     expect(await executarCicloBilling(db as never, provedor as never, 3)).toEqual({
-      eventos: 0, dunning: 0, reconciliacoes: 1, falhas: 0,
+      eventos: 0, dunning: 0, reconciliacoes: 1, notificacoes: 0, falhas: 0,
     });
   });
 });

@@ -119,6 +119,7 @@ enum StatusDocumentoFiscal {
 
 enum StatusNotificacaoBilling {
   PENDENTE
+  PROCESSANDO
   ENVIADA
   FALHOU
   CANCELADA
@@ -511,6 +512,7 @@ model NotificacaoBilling {
   status             StatusNotificacaoBilling @default(PENDENTE)
   tentativas         Int                      @default(0)
   proximaTentativaEm DateTime                 @default(now())
+  processamentoIniciadoEm DateTime?
   enviadaEm          DateTime?
   erroSanitizado     String?
   criadoEm           DateTime                 @default(now())

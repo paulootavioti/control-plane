@@ -7,6 +7,7 @@
 1. eventos brutos de webhook ainda não processados;
 2. passos vencidos da régua de dunning;
 3. reconciliação de assinaturas vinculadas ao Mercado Pago.
+4. entrega da outbox de notificações, quando explicitamente habilitada.
 
 A função exige `x-control-plane-worker-secret`, permanece desabilitada com
 `BILLING_WORKER_ENABLED=false` e processa no máximo
@@ -65,6 +66,13 @@ Notificações são gravadas em `NotificacaoBilling` com chave idempotente. Nest
 etapa a outbox é persistente, mas não existe transporte real de e-mail/SMS. A
 integração futura deve consumir apenas registros `PENDENTE`, registrar tentativas
 e nunca incluir prontuário ou qualquer dado clínico na mensagem.
+
+O consumidor HTTP usa lease de 15 minutos, chave de idempotência, cinco
+tentativas e backoff. Ele só é criado com
+`BILLING_NOTIFICATION_DELIVERY_ENABLED=true`, URL HTTPS e token exclusivo.
+O receptor deve transformar o evento no canal escolhido (e-mail/SMS/WhatsApp)
+e respeitar a chave enviada em `idempotency-key`. Até a homologação do receptor,
+a flag deve permanecer `false`.
 
 ## Habilitação
 

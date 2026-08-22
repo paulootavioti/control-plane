@@ -2,6 +2,9 @@ import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../../shared/prisma";
 import { ExecutarDunningService } from "../dominio/ExecutarDunningService";
 import { NotificadorBillingOutbox } from "../notificacoes/NotificadorBillingOutbox";
+import { EntregarNotificacoesBillingService } from "../notificacoes/EntregarNotificacoesBillingService";
+import type { TransportadorNotificacaoBilling } from "../notificacoes/TransportadorNotificacaoBilling";
+import { TransportadorNotificacaoWebhook } from "../notificacoes/TransportadorNotificacaoWebhook";
 import { MercadoPagoHttp } from "../providers/MercadoPagoHttp";
 import type { ProvedorPagamento } from "../providers/ProvedorPagamento";
 import { ReconciliarAssinaturaService } from "../reconciliacao/ReconciliarAssinaturaService";
@@ -11,7 +14,16 @@ export interface ResultadoCicloBilling {
   eventos: number;
   dunning: number;
   reconciliacoes: number;
+  notificacoes: number;
   falhas: number;
+}
+
+function transporteConfigurado(): TransportadorNotificacaoBilling | undefined {
+  if (process.env.BILLING_NOTIFICATION_DELIVERY_ENABLED !== "true") return undefined;
+  return new TransportadorNotificacaoWebhook(
+    process.env.BILLING_NOTIFICATION_WEBHOOK_URL ?? "",
+    process.env.BILLING_NOTIFICATION_WEBHOOK_TOKEN ?? "",
+  );
 }
 
 function provedorConfigurado(): ProvedorPagamento {
@@ -25,8 +37,9 @@ export async function executarCicloBilling(
   db: PrismaClient = prisma,
   provedor: ProvedorPagamento = provedorConfigurado(),
   limite = 10,
+  transportador: TransportadorNotificacaoBilling | undefined = transporteConfigurado(),
 ): Promise<ResultadoCicloBilling> {
-  const resultado = { eventos: 0, dunning: 0, reconciliacoes: 0, falhas: 0 };
+  const resultado = { eventos: 0, dunning: 0, reconciliacoes: 0, notificacoes: 0, falhas: 0 };
   const processador = new ProcessarEventoWebhookService(db, provedor);
   for (let indice = 0; indice < limite; indice += 1) {
     try {
@@ -60,6 +73,17 @@ export async function executarCicloBilling(
       await new ReconciliarAssinaturaService(db, provedor).execute(assinatura.id);
       resultado.reconciliacoes += 1;
     } catch { resultado.falhas += 1; }
+  }
+  if (transportador) {
+    const entregador = new EntregarNotificacoesBillingService(db, transportador);
+    for (let indice = 0; indice < limite; indice += 1) {
+      try {
+        const estado = await entregador.executarProxima();
+        if (estado === "VAZIO") break;
+        if (estado === "ENVIADA") resultado.notificacoes += 1;
+        if (estado === "FALHOU") resultado.falhas += 1;
+      } catch { resultado.falhas += 1; }
+    }
   }
   return resultado;
 }

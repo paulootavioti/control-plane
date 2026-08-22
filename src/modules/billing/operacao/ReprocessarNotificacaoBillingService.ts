@@ -20,7 +20,7 @@ export class ReprocessarNotificacaoBillingService {
         where: { id: notificacao.id, status: "FALHOU" },
         data: {
           status: "PENDENTE", tentativas: 0, erroSanitizado: null,
-          proximaTentativaEm: agora, enviadaEm: null,
+          proximaTentativaEm: agora, enviadaEm: null, processamentoIniciadoEm: null,
         },
       });
       if (adquirido.count === 0) return { notificacaoId: notificacao.id, duplicado: true };
