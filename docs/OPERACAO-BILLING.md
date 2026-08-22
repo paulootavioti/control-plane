@@ -13,15 +13,23 @@ A função exige `x-control-plane-worker-secret`, permanece desabilitada com
 `BILLING_WORKER_ENABLED=false` e processa no máximo
 `BILLING_WORKER_BATCH_SIZE` itens de cada fila por chamada.
 
-O agendador externo deve chamar:
+O workflow `Billing Worker` chama:
 
 ```text
 POST /.netlify/functions/billing-background
 x-control-plane-worker-secret: <segredo interno>
 ```
 
-Cadência inicial recomendada: a cada 15 minutos. A configuração do agendador e
-do segredo é manual e só deve ocorrer depois da homologação do Mercado Pago.
+A cadência configurada é de 15 minutos. O job permanece ignorado enquanto a
+variável de repositório `BILLING_WORKER_SCHEDULE_ENABLED` não for exatamente
+`true`. Antes de habilitá-la, configure:
+
+- variável `CONTROL_PLANE_PUBLIC_URL` com a origem HTTPS, sem caminho;
+- secret `CONTROL_PLANE_WORKER_SECRET` com o mesmo valor configurado no Netlify;
+- `BILLING_WORKER_ENABLED=true` no ambiente do Netlify.
+
+O `workflow_dispatch` obedece à mesma trava e não permite contornar a
+homologação. Concorrência é serializada para impedir dois ciclos simultâneos.
 
 ## Garantias de processamento
 
@@ -90,5 +98,7 @@ Antes de definir `BILLING_WORKER_ENABLED=true`:
 2. configurar token e webhook secret do Mercado Pago;
 3. cadastrar o webhook HTTPS no PSP;
 4. realizar evento de teste e confirmar persistência/reconciliação;
-5. configurar o agendador com o segredo interno;
-6. observar a fila e os logs antes de liberar assinaturas reais.
+5. configurar URL e segredo do workflow, mantendo a trava desligada;
+6. habilitar o worker no Netlify e `BILLING_WORKER_SCHEDULE_ENABLED=true` no GitHub;
+7. executar manualmente o workflow e confirmar `SUCESSO` no histórico;
+8. observar a fila e os logs antes de liberar assinaturas reais.
