@@ -7,6 +7,9 @@ interface MercadoPagoHttpOptions {
   baseUrl?: string;
   backUrl: string;
   fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+  maxTentativas?: number;
+  aguardarImpl?: (ms: number) => Promise<void>;
 }
 
 interface RespostaMercadoPago {
@@ -21,28 +24,68 @@ export class MercadoPagoHttp implements ProvedorPagamento {
   readonly nome = "MERCADO_PAGO" as const;
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
+  private readonly timeoutMs: number;
+  private readonly maxTentativas: number;
+  private readonly aguardar: (ms: number) => Promise<void>;
 
   constructor(private readonly options: MercadoPagoHttpOptions) {
     if (!options.accessToken.trim()) throw new Error("MERCADO_PAGO_ACCESS_TOKEN_AUSENTE");
     this.baseUrl = options.baseUrl ?? "https://api.mercadopago.com";
+    if (!this.urlHttpsValida(this.baseUrl) || !this.urlHttpsValida(options.backUrl)) {
+      throw new Error("MERCADO_PAGO_URL_INSEGURA");
+    }
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.timeoutMs = options.timeoutMs ?? 10_000;
+    this.maxTentativas = options.maxTentativas ?? 3;
+    this.aguardar = options.aguardarImpl ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+    if (this.timeoutMs < 1_000 || this.timeoutMs > 30_000 || this.maxTentativas < 1 || this.maxTentativas > 3) {
+      throw new Error("MERCADO_PAGO_CONFIGURACAO_HTTP_INVALIDA");
+    }
+  }
+
+  private urlHttpsValida(valor: string) {
+    try { return new URL(valor).protocol === "https:"; } catch { return false; }
+  }
+
+  private async lerCorpo(resposta: Response): Promise<RespostaMercadoPago> {
+    try {
+      if (typeof resposta.text === "function") {
+        const texto = await resposta.text();
+        return texto ? JSON.parse(texto) as RespostaMercadoPago : {};
+      }
+      return await resposta.json() as RespostaMercadoPago;
+    } catch { return {}; }
   }
 
   private async chamar(path: string, init: RequestInit, chaveIdempotencia?: string): Promise<RespostaMercadoPago> {
-    const resposta = await this.fetchImpl(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${this.options.accessToken}`,
-        "Content-Type": "application/json",
-        ...(chaveIdempotencia ? { "X-Idempotency-Key": chaveIdempotencia } : {}),
-        ...init.headers,
-      },
-    });
-    const corpo = await resposta.json() as RespostaMercadoPago;
-    if (!resposta.ok) {
-      throw new Error(`MERCADO_PAGO_HTTP_${resposta.status}:${corpo.message ?? "erro sem mensagem"}`);
+    for (let tentativa = 1; tentativa <= this.maxTentativas; tentativa += 1) {
+      try {
+        const timeout = AbortSignal.timeout(this.timeoutMs);
+        const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+        const resposta = await this.fetchImpl(`${this.baseUrl}${path}`, {
+          ...init,
+          signal,
+          headers: {
+            Authorization: `Bearer ${this.options.accessToken}`,
+            "Content-Type": "application/json",
+            ...(chaveIdempotencia ? { "X-Idempotency-Key": chaveIdempotencia } : {}),
+            ...init.headers,
+          },
+        });
+        const corpo = await this.lerCorpo(resposta);
+        if (resposta.ok) return corpo;
+        const repetivel = resposta.status === 429 || resposta.status >= 500;
+        if (!repetivel || tentativa === this.maxTentativas) throw new Error(`MERCADO_PAGO_HTTP_${resposta.status}`);
+      } catch (erro) {
+        if (erro instanceof Error && erro.message.startsWith("MERCADO_PAGO_HTTP_")) throw erro;
+        if (tentativa === this.maxTentativas) {
+          const timeout = erro instanceof Error && ["AbortError", "TimeoutError"].includes(erro.name);
+          throw new Error(timeout ? "MERCADO_PAGO_TEMPO_ESGOTADO" : "MERCADO_PAGO_INDISPONIVEL");
+        }
+      }
+      await this.aguardar(100 * (2 ** (tentativa - 1)));
     }
-    return corpo;
+    throw new Error("MERCADO_PAGO_INDISPONIVEL");
   }
 
   async criarCliente(dados: CriarClientePagamento, chaveIdempotencia: string) {
@@ -101,6 +144,6 @@ export class MercadoPagoHttp implements ProvedorPagamento {
     await this.chamar(`/preapproval/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify({ status: "cancelled" }),
-    });
+    }, `cancelar:${id}`);
   }
 }
