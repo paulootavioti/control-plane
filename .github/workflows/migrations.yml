@@ -3,12 +3,20 @@ name: Migrations Control Plane
 on:
   workflow_dispatch:
     inputs:
+      modo:
+        description: "Salvaguarda desta execução"
+        required: true
+        default: "backup_confirmado"
+        type: choice
+        options:
+          - backup_confirmado
+          - inicializacao_base_vazia
       confirmacao:
-        description: "Digite APLICAR para confirmar"
+        description: "Digite APLICAR (backup) ou INICIALIZAR (base vazia)"
         required: true
         type: string
-      backup_confirmado:
-        description: "Confirmo que há backup verificável antes da migração"
+      salvaguarda_confirmada:
+        description: "Confirmo o backup recuperável ou que a base não possui dados a preservar"
         required: true
         default: false
         type: boolean
@@ -25,24 +33,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Exigir confirmação e backup
+      - name: Exigir confirmação e salvaguarda
         env:
           CONFIRMACAO: ${{ inputs.confirmacao }}
-          BACKUP_CONFIRMADO: ${{ inputs.backup_confirmado }}
+          MODO: ${{ inputs.modo }}
+          SALVAGUARDA_CONFIRMADA: ${{ inputs.salvaguarda_confirmada }}
           GIT_REF_SELECIONADA: ${{ github.ref }}
         run: |
           if [ "$GIT_REF_SELECIONADA" != "refs/heads/main" ]; then
             echo "::error::Migrações de produção só podem ser executadas a partir de main"
             exit 1
           fi
-          if [ "$CONFIRMACAO" != "APLICAR" ]; then
-            echo "::error::Confirmação inválida; digite APLICAR"
+          if [ "$SALVAGUARDA_CONFIRMADA" != "true" ]; then
+            echo "::error::A salvaguarda da execução precisa ser confirmada"
             exit 1
           fi
-          if [ "$BACKUP_CONFIRMADO" != "true" ]; then
-            echo "::error::O backup precisa ser confirmado"
-            exit 1
-          fi
+          case "$MODO:$CONFIRMACAO" in
+            backup_confirmado:APLICAR) ;;
+            inicializacao_base_vazia:INICIALIZAR) ;;
+            *) echo "::error::Confirmação incompatível com o modo selecionado"; exit 1 ;;
+          esac
 
   migrar:
     needs: validar-autorizacao
@@ -51,6 +61,7 @@ jobs:
     environment: production
     env:
       CONTROL_PLANE_DATABASE_URL: ${{ secrets.CONTROL_PLANE_DATABASE_URL }}
+      MODO_MIGRACAO: ${{ inputs.modo }}
 
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +106,7 @@ jobs:
           {
             echo "## Migrações do Control Plane"
             echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Modo: \`$MODO_MIGRACAO\`"
             echo "- Diagnóstico anterior: \`$STATUS_ANTERIOR\`"
             echo "- Aplicação: concluída"
             echo "- Estado final: sem migrações pendentes"

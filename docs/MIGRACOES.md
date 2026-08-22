@@ -16,16 +16,25 @@ tenant, SysBelt, Mecanix ou Psyché.
 ## Execução
 
 1. confirmar que o commit desejado já está em `main`;
-2. gerar e verificar backup recuperável;
+2. escolher a salvaguarda:
+   - `backup_confirmado`: gerar e verificar backup recuperável;
+   - `inicializacao_base_vazia`: confirmar que a base ainda não contém dados a
+     preservar; este modo é exclusivo da primeira inicialização;
 3. abrir Actions → Migrations Control Plane → Run workflow;
-4. selecionar `main`, marcar a confirmação de backup e digitar `APLICAR`;
+4. selecionar `main`, marcar a confirmação da salvaguarda e informar:
+   - `APLICAR` para `backup_confirmado`;
+   - `INICIALIZAR` para `inicializacao_base_vazia`;
 5. aprovar o environment `production`;
 6. conferir `prisma migrate status` e o resumo do job.
 
 O workflow serializa execuções, usa `prisma migrate deploy` e falha se a
-confirmação, o backup declarado, o secret ou a URL PostgreSQL estiverem
-ausentes. Também recusa qualquer referência diferente de `main`. Ele nunca
-imprime a connection string.
+confirmação não corresponder ao modo, a salvaguarda não for declarada ou o
+secret/URL PostgreSQL estiver ausente. Também recusa qualquer referência
+diferente de `main`. Ele nunca imprime a connection string.
+
+Depois que o sistema receber qualquer informação real, use exclusivamente
+`backup_confirmado`; declarar base vazia com dados existentes viola o
+procedimento operacional.
 
 ## Rollback
 
