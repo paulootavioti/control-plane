@@ -42,6 +42,7 @@ antiguidade das filas sem receber payloads, destinatários ou dados pessoais:
 GET /billing/operacao/resumo
 GET /billing/operacao/falhas?limite=20
 GET /billing/operacao/execucoes?limite=20
+GET /billing/operacao/prontidao
 ```
 
 Itens definitivamente falhos podem ser devolvidos à fila de forma atômica. A
@@ -61,6 +62,9 @@ para os mesmos perfis autorizados pela API.
 Cada chamada autenticada do worker registra início, conclusão, contadores e
 resultado (`SUCESSO`, `PARCIAL` ou `FALHOU`). O histórico não contém payloads,
 destinatários ou segredos.
+O diagnóstico de prontidão retorna apenas booleanos. Ele nunca devolve tokens,
+segredos ou URLs configuradas e diferencia preparação para homologação de
+habilitação efetiva em produção.
 Ao retomar dunning, a assinatura precisa continuar elegível. A ação apenas
 reagenda o passo; antes de executá-lo, o worker reconcilia novamente o PSP.
 

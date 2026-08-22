@@ -9,6 +9,7 @@ import { IniciarCobrancaRecorrenteService } from "./IniciarCobrancaRecorrenteSer
 import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService";
 import { ListarFalhasBillingService } from "./operacao/ListarFalhasBillingService";
 import { ListarExecucoesWorkerBillingService } from "./operacao/ListarExecucoesWorkerBillingService";
+import { ObterProntidaoBillingService } from "./operacao/ObterProntidaoBillingService";
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
 import { ReprocessarDunningBillingService } from "./operacao/ReprocessarDunningBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
@@ -18,6 +19,12 @@ import { ReceberEventoWebhookService } from "./webhooks/ReceberEventoWebhookServ
 import { chaveEventoMercadoPago, verificarAssinaturaMercadoPago } from "./webhooks/verificarAssinaturaMercadoPago";
 
 export const billingRoutes = Router();
+
+billingRoutes.get(
+  "/operacao/prontidao",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (_request, response) => response.json(new ObterProntidaoBillingService().execute()),
+);
 
 const falhasSchema = z.object({
   limite: z.coerce.number().int().min(1).max(100).default(20),

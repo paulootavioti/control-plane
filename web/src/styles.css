@@ -147,6 +147,16 @@ h2 {
   margin-top: 1rem;
 }
 
+.grade-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.checklist { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.estado-ok { color: #86d69b; }
+.estado-pendente { color: var(--destaque); }
+
 .conteudo {
   max-width: 1100px;
   margin: 0 auto;
