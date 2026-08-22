@@ -1,0 +1,48 @@
+name: Billing Worker
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: billing-worker
+  cancel-in-progress: false
+
+jobs:
+  executar:
+    if: ${{ vars.BILLING_WORKER_SCHEDULE_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validar configuração
+        env:
+          CONTROL_PLANE_PUBLIC_URL: ${{ vars.CONTROL_PLANE_PUBLIC_URL }}
+          CONTROL_PLANE_WORKER_SECRET: ${{ secrets.CONTROL_PLANE_WORKER_SECRET }}
+        run: |
+          if [ -z "$CONTROL_PLANE_PUBLIC_URL" ]; then
+            echo "::error::Variável CONTROL_PLANE_PUBLIC_URL ausente"
+            exit 1
+          fi
+          case "$CONTROL_PLANE_PUBLIC_URL" in
+            https://*) ;;
+            *) echo "::error::CONTROL_PLANE_PUBLIC_URL deve usar HTTPS"; exit 1 ;;
+          esac
+          if [ "${#CONTROL_PLANE_WORKER_SECRET}" -lt 32 ]; then
+            echo "::error::Segredo CONTROL_PLANE_WORKER_SECRET ausente ou curto"
+            exit 1
+          fi
+
+      - name: Executar ciclo
+        env:
+          CONTROL_PLANE_PUBLIC_URL: ${{ vars.CONTROL_PLANE_PUBLIC_URL }}
+          CONTROL_PLANE_WORKER_SECRET: ${{ secrets.CONTROL_PLANE_WORKER_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-all-errors --max-time 60 \
+            --request POST \
+            --header "x-control-plane-worker-secret: $CONTROL_PLANE_WORKER_SECRET" \
+            "$CONTROL_PLANE_PUBLIC_URL/.netlify/functions/billing-background"
