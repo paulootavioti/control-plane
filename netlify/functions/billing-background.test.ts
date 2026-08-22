@@ -6,6 +6,7 @@ describe("billing-background", () => {
     delete process.env.CONTROL_PLANE_WORKER_SECRET;
     delete process.env.BILLING_WORKER_ENABLED;
     delete process.env.BILLING_WORKER_BATCH_SIZE;
+    delete process.env.BILLING_NOTIFICATION_DELIVERY_ENABLED;
   });
 
   it("exige segredo interno", async () => {
