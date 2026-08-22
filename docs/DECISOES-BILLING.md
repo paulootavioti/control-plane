@@ -14,6 +14,11 @@ público, o fluxo precisa ser homologado no sandbox e confirmado na conta
 Mercado Pago definitiva. Até lá, nenhuma assinatura local é ativada apenas pela
 criação do checkout: a ativação depende de evento assinado ou reconciliação.
 
+Chamadas HTTP usam timeout de dez segundos e até três tentativas somente para
+falhas de rede, `429` e `5xx`. Operações mutáveis carregam chave idempotente.
+URLs da API e de retorno devem usar HTTPS, e mensagens do PSP não são copiadas
+para erros internos ou respostas do Control Plane.
+
 ## Trial e inadimplência
 
 - Trial: 14 dias.
