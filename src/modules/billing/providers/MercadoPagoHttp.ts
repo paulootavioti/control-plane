@@ -6,6 +6,7 @@ interface MercadoPagoHttpOptions {
   accessToken: string;
   baseUrl?: string;
   backUrl: string;
+  webhookUrl: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   maxTentativas?: number;
@@ -37,7 +38,8 @@ export class MercadoPagoHttp implements ProvedorPagamento {
   constructor(private readonly options: MercadoPagoHttpOptions) {
     if (!options.accessToken.trim()) throw new Error("MERCADO_PAGO_ACCESS_TOKEN_AUSENTE");
     this.baseUrl = options.baseUrl ?? "https://api.mercadopago.com";
-    if (!this.urlHttpsValida(this.baseUrl) || !this.urlHttpsValida(options.backUrl)) {
+    if (!this.urlHttpsValida(this.baseUrl) || !this.urlHttpsValida(options.backUrl)
+      || !this.urlHttpsValida(options.webhookUrl)) {
       throw new Error("MERCADO_PAGO_URL_INSEGURA");
     }
     this.fetchImpl = options.fetchImpl ?? fetch;
@@ -115,6 +117,7 @@ export class MercadoPagoHttp implements ProvedorPagamento {
         external_reference: dados.referenciaExterna,
         payer_email: dados.pagadorEmail,
         back_url: this.options.backUrl,
+        notification_url: this.options.webhookUrl,
         status: "pending",
         auto_recurring: {
           frequency: 1,

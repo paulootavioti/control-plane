@@ -13,6 +13,8 @@ na conta comercial definitiva antes do lançamento.
 limita o timestamp a cinco minutos e persiste o payload bruto antes de
 processá-lo. A idempotência usa `{type}:{action}:{data.id}`. Reenvios retornam
 `200`; novos eventos aceitos retornam `202`.
+Na criação de assinaturas, esse endpoint é enviado ao Mercado Pago como
+`notification_url`; `back_url` continua reservado ao retorno do navegador.
 
 ```json
 {

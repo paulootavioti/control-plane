@@ -122,6 +122,7 @@ function mercadoPagoConfigurado() {
   return new MercadoPagoHttp({
     accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN ?? "",
     backUrl: process.env.MERCADO_PAGO_BACK_URL ?? "",
+    webhookUrl: process.env.MERCADO_PAGO_WEBHOOK_URL ?? "",
   });
 }
 
