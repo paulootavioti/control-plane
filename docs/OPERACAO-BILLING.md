@@ -51,6 +51,7 @@ GET /billing/operacao/resumo
 GET /billing/operacao/falhas?limite=20
 GET /billing/operacao/execucoes?limite=20
 GET /billing/operacao/prontidao
+GET /billing/operacao/mercado-pago/webhook
 POST /billing/operacao/mercado-pago/validar
 ```
 
@@ -79,6 +80,11 @@ no PSP e exige operador `FINANCEIRO` ou `ADMIN_PLATAFORMA`. A resposta contém
 somente o país/site e o instante da verificação; o identificador da conta e as
 credenciais não são retornados nem gravados. Sucesso ou falha sanitizada ficam
 registrados na auditoria da plataforma.
+O endpoint de evidência do webhook retorna somente tipo, ação, estado e datas do
+último evento real cuja assinatura foi aceita. Eventos da rota interna de teste
+são excluídos e payload/identificador externo nunca são retornados. Após usar o
+simulador oficial, o painel deve apresentar `Assinatura validada` antes que o
+worker seja habilitado.
 Ao retomar dunning, a assinatura precisa continuar elegível. A ação apenas
 reagenda o passo; antes de executá-lo, o worker reconcilia novamente o PSP.
 
