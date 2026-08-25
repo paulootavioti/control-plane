@@ -10,6 +10,7 @@ import { ObterResumoBillingService } from "./operacao/ObterResumoBillingService"
 import { ListarFalhasBillingService } from "./operacao/ListarFalhasBillingService";
 import { ListarExecucoesWorkerBillingService } from "./operacao/ListarExecucoesWorkerBillingService";
 import { ObterProntidaoBillingService } from "./operacao/ObterProntidaoBillingService";
+import { ObterEvidenciaWebhookMercadoPagoService } from "./operacao/ObterEvidenciaWebhookMercadoPagoService";
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
 import { ReprocessarDunningBillingService } from "./operacao/ReprocessarDunningBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
@@ -25,6 +26,12 @@ billingRoutes.get(
   "/operacao/prontidao",
   autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
   async (_request, response) => response.json(new ObterProntidaoBillingService().execute()),
+);
+
+billingRoutes.get(
+  "/operacao/mercado-pago/webhook",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (_request, response) => response.json(await new ObterEvidenciaWebhookMercadoPagoService(prisma).execute()),
 );
 
 const falhasSchema = z.object({
