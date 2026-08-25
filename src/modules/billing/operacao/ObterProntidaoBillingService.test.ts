@@ -5,6 +5,7 @@ const base = {
   MERCADO_PAGO_ACCESS_TOKEN: "APP_USR-" + "x".repeat(32),
   MERCADO_PAGO_WEBHOOK_SECRET: "w".repeat(32),
   MERCADO_PAGO_BACK_URL: "https://control.example.com/billing/retorno",
+  MERCADO_PAGO_WEBHOOK_URL: "https://control.example.com/api/billing/webhooks/mercado-pago",
   CONTROL_PLANE_WORKER_SECRET: "s".repeat(32),
   BILLING_WORKER_BATCH_SIZE: "10",
   BILLING_WORKER_ENABLED: "false",
@@ -24,10 +25,13 @@ describe("prontidão do billing", () => {
   it("exige HTTPS, segredos mínimos e lote válido", () => {
     const resultado = new ObterProntidaoBillingService().execute({
       ...base, MERCADO_PAGO_WEBHOOK_SECRET: "curto", MERCADO_PAGO_BACK_URL: "http://inseguro.example.com",
+      MERCADO_PAGO_WEBHOOK_URL: "http://inseguro.example.com/webhook",
       CONTROL_PLANE_WORKER_SECRET: "curto", BILLING_WORKER_BATCH_SIZE: "99",
     });
     expect(resultado.prontoParaHomologacao).toBe(false);
-    expect(resultado.mercadoPago).toMatchObject({ webhookSecret: false, backUrlHttps: false, pronto: false });
+    expect(resultado.mercadoPago).toMatchObject({
+      webhookSecret: false, backUrlHttps: false, webhookUrlHttps: false, pronto: false,
+    });
     expect(resultado.worker).toMatchObject({ segredoInterno: false, loteValido: false, configurado: false });
   });
 

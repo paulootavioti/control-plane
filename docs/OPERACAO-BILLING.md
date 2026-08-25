@@ -102,7 +102,9 @@ Antes de definir `BILLING_WORKER_ENABLED=true`:
 
 1. validar backup e aplicar migrações pelo workflow `Migrations Control Plane`;
 2. configurar token e webhook secret do Mercado Pago;
-3. cadastrar o webhook HTTPS no PSP;
+3. configurar `MERCADO_PAGO_WEBHOOK_URL` com o endpoint público HTTPS
+   `/api/billing/webhooks/mercado-pago`; para Assinaturas, o Control Plane envia
+   essa URL como `notification_url` na criação do recurso;
 4. realizar evento de teste e confirmar persistência/reconciliação;
 5. configurar URL e segredo do workflow, mantendo a trava desligada;
 6. habilitar o worker no Netlify e `BILLING_WORKER_SCHEDULE_ENABLED=true` no GitHub;

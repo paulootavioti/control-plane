@@ -20,6 +20,7 @@ export class ObterProntidaoBillingService {
       accessToken: segredoValido(ambiente.MERCADO_PAGO_ACCESS_TOKEN, 20),
       webhookSecret: segredoValido(ambiente.MERCADO_PAGO_WEBHOOK_SECRET),
       backUrlHttps: urlHttpsValida(ambiente.MERCADO_PAGO_BACK_URL),
+      webhookUrlHttps: urlHttpsValida(ambiente.MERCADO_PAGO_WEBHOOK_URL),
     };
     const worker = {
       segredoInterno: segredoValido(ambiente.CONTROL_PLANE_WORKER_SECRET),
