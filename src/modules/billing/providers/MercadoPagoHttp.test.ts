@@ -80,4 +80,17 @@ describe("MercadoPagoHttp", () => {
     const [, init] = fetchImpl.mock.calls[0];
     expect(init.headers["X-Idempotency-Key"]).toBe("cancelar:sub/1");
   });
+
+  it("valida a credencial com consulta sem efeito colateral", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      text: async () => JSON.stringify({ id: 123, site_id: "MLB", status: { site_status: "active" } }),
+    });
+    const resultado = await new MercadoPagoHttp({
+      accessToken: "token", backUrl: "https://example.com", baseUrl: "https://api.test", fetchImpl,
+    }).validarCredencial();
+    expect(resultado).toEqual({ contaId: "123", siteId: "MLB", ativa: true });
+    expect(fetchImpl.mock.calls[0][0]).toBe("https://api.test/users/me");
+    expect(fetchImpl.mock.calls[0][1].method).toBe("GET");
+  });
 });

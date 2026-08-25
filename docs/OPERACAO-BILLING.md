@@ -51,6 +51,7 @@ GET /billing/operacao/resumo
 GET /billing/operacao/falhas?limite=20
 GET /billing/operacao/execucoes?limite=20
 GET /billing/operacao/prontidao
+POST /billing/operacao/mercado-pago/validar
 ```
 
 Itens definitivamente falhos podem ser devolvidos à fila de forma atômica. A
@@ -73,6 +74,11 @@ destinatários ou segredos.
 O diagnóstico de prontidão retorna apenas booleanos. Ele nunca devolve tokens,
 segredos ou URLs configuradas e diferencia preparação para homologação de
 habilitação efetiva em produção.
+O diagnóstico ativo do Mercado Pago consulta `GET /users/me`, não cria recursos
+no PSP e exige operador `FINANCEIRO` ou `ADMIN_PLATAFORMA`. A resposta contém
+somente o país/site e o instante da verificação; o identificador da conta e as
+credenciais não são retornados nem gravados. Sucesso ou falha sanitizada ficam
+registrados na auditoria da plataforma.
 Ao retomar dunning, a assinatura precisa continuar elegível. A ação apenas
 reagenda o passo; antes de executá-lo, o worker reconcilia novamente o PSP.
 

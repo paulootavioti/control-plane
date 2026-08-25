@@ -13,6 +13,7 @@ import { ObterProntidaoBillingService } from "./operacao/ObterProntidaoBillingSe
 import { ReprocessarNotificacaoBillingService } from "./operacao/ReprocessarNotificacaoBillingService";
 import { ReprocessarDunningBillingService } from "./operacao/ReprocessarDunningBillingService";
 import { ReprocessarWebhookBillingService } from "./operacao/ReprocessarWebhookBillingService";
+import { ValidarHomologacaoMercadoPagoService } from "./operacao/ValidarHomologacaoMercadoPagoService";
 import { MercadoPagoHttp } from "./providers/MercadoPagoHttp";
 import { ReconciliarAssinaturaService } from "./reconciliacao/ReconciliarAssinaturaService";
 import { ReceberEventoWebhookService } from "./webhooks/ReceberEventoWebhookService";
@@ -123,6 +124,23 @@ function mercadoPagoConfigurado() {
     backUrl: process.env.MERCADO_PAGO_BACK_URL ?? "",
   });
 }
+
+billingRoutes.post(
+  "/operacao/mercado-pago/validar",
+  autenticarOperador(["FINANCEIRO", "ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    try {
+      return response.json(await new ValidarHomologacaoMercadoPagoService(prisma, mercadoPagoConfigurado())
+        .execute(contextoAuditoria(request, response)));
+    } catch (erro) {
+      const codigo = erro instanceof Error && erro.message.startsWith("MERCADO_PAGO_")
+        ? erro.message
+        : "MERCADO_PAGO_INDISPONIVEL";
+      const status = ["MERCADO_PAGO_ACCESS_TOKEN_AUSENTE", "MERCADO_PAGO_URL_INSEGURA"].includes(codigo) ? 409 : 502;
+      return response.status(status).json({ codigo });
+    }
+  },
+);
 
 const iniciarSchema = z.object({
   valorCentavos: z.number().int().positive(),

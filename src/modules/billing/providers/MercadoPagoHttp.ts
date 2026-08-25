@@ -20,6 +20,12 @@ interface RespostaMercadoPago {
   message?: string;
 }
 
+interface UsuarioMercadoPago {
+  id?: string | number;
+  site_id?: string;
+  status?: { site_status?: string };
+}
+
 export class MercadoPagoHttp implements ProvedorPagamento {
   readonly nome = "MERCADO_PAGO" as const;
   private readonly baseUrl: string;
@@ -145,5 +151,15 @@ export class MercadoPagoHttp implements ProvedorPagamento {
       method: "PUT",
       body: JSON.stringify({ status: "cancelled" }),
     }, `cancelar:${id}`);
+  }
+
+  async validarCredencial(): Promise<{ contaId: string; siteId: string; ativa: boolean }> {
+    const corpo = await this.chamar("/users/me", { method: "GET" }) as UsuarioMercadoPago;
+    if (!corpo.id || !corpo.site_id) throw new Error("MERCADO_PAGO_RESPOSTA_CREDENCIAL_INVALIDA");
+    return {
+      contaId: String(corpo.id),
+      siteId: corpo.site_id,
+      ativa: corpo.status?.site_status !== "blocked",
+    };
   }
 }
