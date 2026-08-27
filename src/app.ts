@@ -15,6 +15,8 @@ import { assinaturasRoutes } from "./modules/assinaturas/routes";
 import { contatosRoutes } from "./modules/contatos/routes";
 import { diretorioRoutes } from "./modules/diretorio/routes";
 import { billingRoutes } from "./modules/billing/routes";
+import { VerificarProntidaoService } from "./modules/saude/VerificarProntidaoService";
+import { prisma } from "./shared/prisma";
 
 export const app = express();
 
@@ -42,5 +44,13 @@ app.get("/health", (_request, response) => {
   response.status(200).json({
     service: "sysbelt-control-plane",
     status: "ok",
+  });
+});
+
+app.get("/ready", async (_request, response) => {
+  const pronto = await new VerificarProntidaoService(prisma).execute();
+  return response.status(pronto ? 200 : 503).json({
+    service: "sysbelt-control-plane",
+    status: pronto ? "ready" : "unavailable",
   });
 });

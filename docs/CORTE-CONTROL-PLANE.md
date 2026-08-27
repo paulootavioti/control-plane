@@ -8,7 +8,7 @@
 4. Replicar no site, sem registrar valores em Git, todas as variáveis listadas em `.env.example`.
 5. Aplicar `npm run prisma:migrate:deploy` contra o banco existente antes do primeiro deploy que exigir migration nova.
 6. Executar o deploy manual pelo workflow do repositório independente.
-7. Validar `/api/health`, login do operador, diretório de tenant, emissão de concessão e recebimento de snapshot.
+7. Validar `/api/health`, `/api/ready`, login do operador, diretório de tenant, emissão de concessão e recebimento de snapshot.
 8. Observar logs e métricas por um ciclo operacional antes de mesclar a remoção no SysBelt.
 9. No SysBelt, manter `CONTROL_PLANE_URL` apontando para a mesma origem; nenhuma mudança de DNS é necessária se o site existente for reaproveitado.
 10. Desabilitar o workflow antigo somente após um deploy bem-sucedido pelo novo repositório.
