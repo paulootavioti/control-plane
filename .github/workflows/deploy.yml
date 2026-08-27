@@ -37,7 +37,15 @@ jobs:
             echo "::error::Segredo(s) ausente(s):$faltando"
             exit 1
           fi
-      - run: npx netlify-cli@27 deploy --prod --dir=web/dist --functions=dist/netlify/functions
+      - name: Publicar no Netlify
+        run: npx netlify-cli@27 deploy --prod --dir=web/dist --functions=dist/netlify/functions --json > netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Resolver URL publicada
+        run: |
+          node -e 'const fs=require("node:fs"); const d=JSON.parse(fs.readFileSync("netlify-deploy.json","utf8")); const u=d.url; if(typeof u!=="string" || !u.startsWith("https://")) process.exit(1); process.stdout.write(`CONTROL_PLANE_DEPLOY_URL=${u.replace(/\/$/, "")}\n`)' >> "$GITHUB_ENV"
+      - name: Validar liveness e prontidão
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 2 "$CONTROL_PLANE_DEPLOY_URL/api/health"
+          curl --fail --silent --show-error --retry 3 --retry-delay 2 "$CONTROL_PLANE_DEPLOY_URL/api/ready"

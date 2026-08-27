@@ -26,8 +26,8 @@ do checklist operacional documentado.
 - possui build e deploy Netlify próprios;
 - não importa código da API do Tenant Plane;
 - integra-se com cada academia somente por contratos versionados;
-- nesta primeira etapa, expõe apenas `GET /api/health` no Netlify e
-  `GET /health` durante o desenvolvimento local.
+- expõe `GET /api/health` para liveness e `GET /api/ready` para confirmar a
+  conexão com o banco no Netlify; localmente, use `/health` e `/ready`.
 
 ## Desenvolvimento local
 
@@ -41,7 +41,8 @@ npm run dev
 
 O schema comercial contém assinantes, contatos, planos versionados,
 assinaturas e faturas com memória de cálculo por unidade. A URL registra a
-fronteira exclusiva do banco; a rota de health check não abre conexão.
+fronteira exclusiva do banco. A rota de liveness não abre conexão; a rota de
+prontidão executa somente `SELECT 1` e nunca devolve detalhes de erro.
 
 O Tenant Plane resolve seu banco por `GET /api/diretorio/v1/tenants/:slug`,
 autenticado por `x-sysbelt-directory-secret`. A rota interna aceita somente
