@@ -2,10 +2,9 @@
 // banco. Ver o comentário em server.ts.
 import "dotenv/config";
 
-import { PerfilOperador } from "@prisma/client";
-
 import { operadorInicialSchema, criarSenhaHash } from "../modules/auth/regrasAuth";
 import { prisma } from "../shared/prisma";
+import { CriarOperadorInicialService } from "../modules/operadores/CriarOperadorInicialService";
 
 async function main() {
   const dados = operadorInicialSchema.parse({
@@ -14,21 +13,14 @@ async function main() {
     senha: process.env.CONTROL_PLANE_ADMIN_PASSWORD,
   });
 
-  const existente = await prisma.operadorPlataforma.findUnique({ where: { email: dados.email } });
-  if (existente) {
-    throw new Error("Já existe um operador com este e-mail.");
-  }
-
-  await prisma.operadorPlataforma.create({
-    data: {
-      nome: dados.nome,
-      email: dados.email,
-      senhaHash: await criarSenhaHash(dados.senha),
-      perfil: PerfilOperador.ADMIN_PLATAFORMA,
-    },
+  const resultado = await new CriarOperadorInicialService(prisma).execute({
+    nome: dados.nome,
+    email: dados.email,
+    senhaHash: await criarSenhaHash(dados.senha),
   });
-
-  console.log("Operador administrador inicial criado.");
+  console.log(resultado.criado
+    ? "Operador administrador inicial criado."
+    : "Operador administrador inicial já estava configurado.");
 }
 
 main()

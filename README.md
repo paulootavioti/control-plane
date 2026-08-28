@@ -53,7 +53,9 @@ identificadores do provedor e dados comerciais não fazem parte do contrato.
 ## Operador inicial
 
 Depois de aplicar as migrations, defina as variáveis `CONTROL_PLANE_ADMIN_*`
-e execute `npm run seed:operator` uma única vez. Não há usuário ou senha padrão.
+e execute o workflow protegido descrito em
+[`docs/BOOTSTRAP-OPERADOR.md`](docs/BOOTSTRAP-OPERADOR.md). Em desenvolvimento,
+`npm run seed:operator` continua disponível. Não há usuário ou senha padrão.
 O login usa `POST /api/auth/login` e a sessão pode ser consultada em
 `GET /api/auth/me`.
 
