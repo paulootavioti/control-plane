@@ -38,7 +38,9 @@ jobs:
             exit 1
           fi
       - name: Publicar no Netlify
-        run: npx netlify-cli@27 deploy --prod --dir=web/dist --functions=dist/netlify/functions --json > netlify-deploy.json
+        # Versão exata: faixas do CLI já quebraram o deploy por dependência
+        # publicada de forma inconsistente no registry.
+        run: npx --yes netlify-cli@27.1.2 deploy --prod --dir=web/dist --functions=dist/netlify/functions --json > netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
