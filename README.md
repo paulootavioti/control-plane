@@ -13,6 +13,16 @@ serão configuradas somente após o lançamento. Consulte
 Para execução das filas, leases e reconciliação, consulte
 [`docs/OPERACAO-BILLING.md`](docs/OPERACAO-BILLING.md).
 
+## Documentação operacional
+
+- [Visão geral e arquitetura](docs/VISAO-GERAL.md)
+- [API e matriz de permissões](docs/API-E-PERMISSOES.md)
+- [Percurso operacional ponta a ponta](docs/PERCURSO-OPERACIONAL.md)
+- [Prontidão de produção e rollback](docs/PRONTIDAO-PRODUCAO.md)
+- [Bootstrap do operador inicial](docs/BOOTSTRAP-OPERADOR.md)
+- [Migrações protegidas](docs/MIGRACOES.md)
+- [Operação do billing](docs/OPERACAO-BILLING.md)
+
 Migrações de produção não são executadas pelo deploy. Use somente o workflow
 manual protegido descrito em [`docs/MIGRACOES.md`](docs/MIGRACOES.md).
 
@@ -53,7 +63,9 @@ identificadores do provedor e dados comerciais não fazem parte do contrato.
 ## Operador inicial
 
 Depois de aplicar as migrations, defina as variáveis `CONTROL_PLANE_ADMIN_*`
-e execute `npm run seed:operator` uma única vez. Não há usuário ou senha padrão.
+e execute o workflow protegido descrito em
+[`docs/BOOTSTRAP-OPERADOR.md`](docs/BOOTSTRAP-OPERADOR.md). Em desenvolvimento,
+`npm run seed:operator` continua disponível. Não há usuário ou senha padrão.
 O login usa `POST /api/auth/login` e a sessão pode ser consultada em
 `GET /api/auth/me`.
 

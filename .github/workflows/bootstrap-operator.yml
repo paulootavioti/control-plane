@@ -1,0 +1,62 @@
+name: Bootstrap Operator
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacao:
+        description: "Digite CRIAR_ADMIN para confirmar"
+        required: true
+        type: string
+      salvaguarda:
+        description: "Confirmo que este é o bootstrap inicial do Control Plane"
+        required: true
+        type: boolean
+
+concurrency:
+  group: bootstrap-operator-production
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    environment: production
+    runs-on: ubuntu-latest
+    env:
+      CONTROL_PLANE_DATABASE_URL: ${{ secrets.CONTROL_PLANE_DATABASE_URL }}
+      CONTROL_PLANE_ADMIN_NAME: ${{ secrets.CONTROL_PLANE_ADMIN_NAME }}
+      CONTROL_PLANE_ADMIN_EMAIL: ${{ secrets.CONTROL_PLANE_ADMIN_EMAIL }}
+      CONTROL_PLANE_ADMIN_PASSWORD: ${{ secrets.CONTROL_PLANE_ADMIN_PASSWORD }}
+    steps:
+      - name: Validar autorização
+        run: |
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Bootstrap permitido somente a partir de main"
+            exit 1
+          fi
+          if [ "${{ inputs.confirmacao }}" != "CRIAR_ADMIN" ] || [ "${{ inputs.salvaguarda }}" != "true" ]; then
+            echo "::error::Confirmação ou salvaguarda inválida"
+            exit 1
+          fi
+      - name: Validar secrets obrigatórios
+        run: |
+          faltando=""
+          [ -z "$CONTROL_PLANE_DATABASE_URL" ] && faltando="$faltando CONTROL_PLANE_DATABASE_URL"
+          [ -z "$CONTROL_PLANE_ADMIN_NAME" ] && faltando="$faltando CONTROL_PLANE_ADMIN_NAME"
+          [ -z "$CONTROL_PLANE_ADMIN_EMAIL" ] && faltando="$faltando CONTROL_PLANE_ADMIN_EMAIL"
+          [ "${#CONTROL_PLANE_ADMIN_PASSWORD}" -lt 12 ] && faltando="$faltando CONTROL_PLANE_ADMIN_PASSWORD"
+          if [ -n "$faltando" ]; then
+            echo "::error::Secret(s) ausente(s) ou inválido(s):$faltando"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci --include=dev
+      - name: Criar administrador inicial
+        run: npm run seed:operator
+      - name: Registrar resumo
+        if: success()
+        run: |
+          echo "## Bootstrap do operador" >> "$GITHUB_STEP_SUMMARY"
+          echo "Administrador inicial confirmado sem expor credenciais." >> "$GITHUB_STEP_SUMMARY"
