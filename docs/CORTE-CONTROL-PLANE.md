@@ -1,5 +1,10 @@
 # Corte do Control Plane
 
+> Situação em 31 de agosto de 2026: repositório extraído, site associado,
+> migrações aplicadas e deploy com readiness validados. Os passos 7 e 8 ainda
+> exigem o percurso manual descrito em
+> [`PERCURSO-OPERACIONAL.md`](PERCURSO-OPERACIONAL.md).
+
 ## Ordem de execução
 
 1. Publicar a branch extraída e validar o CI sem alterar produção.

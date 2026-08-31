@@ -13,6 +13,16 @@ serão configuradas somente após o lançamento. Consulte
 Para execução das filas, leases e reconciliação, consulte
 [`docs/OPERACAO-BILLING.md`](docs/OPERACAO-BILLING.md).
 
+## Documentação operacional
+
+- [Visão geral e arquitetura](docs/VISAO-GERAL.md)
+- [API e matriz de permissões](docs/API-E-PERMISSOES.md)
+- [Percurso operacional ponta a ponta](docs/PERCURSO-OPERACIONAL.md)
+- [Prontidão de produção e rollback](docs/PRONTIDAO-PRODUCAO.md)
+- [Bootstrap do operador inicial](docs/BOOTSTRAP-OPERADOR.md)
+- [Migrações protegidas](docs/MIGRACOES.md)
+- [Operação do billing](docs/OPERACAO-BILLING.md)
+
 Migrações de produção não são executadas pelo deploy. Use somente o workflow
 manual protegido descrito em [`docs/MIGRACOES.md`](docs/MIGRACOES.md).
 
