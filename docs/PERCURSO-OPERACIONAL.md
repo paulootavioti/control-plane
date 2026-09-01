@@ -27,6 +27,10 @@ As migrações nunca são aplicadas implicitamente pelo deploy.
 4. Acesse `/login`, autentique e confirme `GET /api/auth/me`.
 5. Remova os três secrets `CONTROL_PLANE_ADMIN_*` após a validação.
 
+O painel de produção usa a mesma origem da API. Só configure
+`CONTROL_PLANE_CORS_ORIGINS` se houver outro frontend autorizado; informe
+origens HTTPS completas, separadas por vírgula e sem caminhos.
+
 O bootstrap não promove operadores, não reativa contas e não cria um segundo
 administrador.
 

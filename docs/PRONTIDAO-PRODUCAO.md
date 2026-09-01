@@ -25,7 +25,7 @@ existente; não substitui validação manual do ambiente.
 | Fiscal | Não implementado | existe somente a abstração de provedor |
 | Recuperação de senha | Não implementado | requisito antes de operação autônoma |
 | Rate limit distribuído | Não implementado | login usa memória da instância serverless |
-| CORS restritivo | Não implementado | API usa política aberta; restringir origens |
+| CORS restritivo | Implementado | mesma origem por padrão e allowlist HTTPS explícita |
 | Backup recuperável | Não comprovado | configurar rotina e testar restauração |
 | Monitoramento/alertas externos | Não comprovado | definir alertas para 5xx, readiness e filas |
 
@@ -47,7 +47,7 @@ CONTROL_PLANE_DIRECTORY_LEGACY_ENABLED=false
 - [x] Smoke test de liveness e banco depois do deploy.
 - [ ] Configurar e executar o bootstrap do administrador.
 - [ ] Validar login, expiração e invalidação de sessão.
-- [ ] Restringir CORS às origens autorizadas.
+- [x] Restringir CORS às origens autorizadas.
 - [ ] Definir recuperação segura de senha.
 - [ ] Substituir ou complementar rate limit local com armazenamento distribuído.
 - [ ] Configurar backup e executar restauração de teste.

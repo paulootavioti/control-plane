@@ -56,6 +56,10 @@ Perfis disponíveis:
 - `FINANCEIRO`: faturas, indicadores financeiros e billing;
 - `SUPORTE`: inventário e diagnóstico de ambientes.
 
+O navegador pode acessar a API pela mesma origem. Origens adicionais precisam
+estar em `CONTROL_PLANE_CORS_ORIGINS`, usam HTTPS e são comparadas de forma
+exata; requisições cruzadas não autorizadas recebem `403`.
+
 Integrações máquina-a-máquina não usam o JWT do operador:
 
 - diretório: credencial versionada e separada por produto;

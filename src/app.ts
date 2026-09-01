@@ -17,12 +17,19 @@ import { diretorioRoutes } from "./modules/diretorio/routes";
 import { billingRoutes } from "./modules/billing/routes";
 import { VerificarProntidaoService } from "./modules/saude/VerificarProntidaoService";
 import { prisma } from "./shared/prisma";
+import { restringirCors } from "./shared/corsSeguro";
 
 export const app = express();
 
 app.set("trust proxy", true);
 app.disable("x-powered-by");
-app.use(cors());
+app.use(restringirCors);
+app.use(cors({
+  origin: true,
+  credentials: false,
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Authorization", "Content-Type"],
+}));
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/integracao", integracaoRoutes);
