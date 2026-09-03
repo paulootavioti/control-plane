@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { Mensagem } from "../../components/Mensagem";
+import { ErrorMessage, PageHeader, Skeleton, StatBand } from "../../components/ui";
 import { api } from "../../services/api";
-import { formatarCentavos, rotularStatus } from "../../utils/formatar";
+import { formatarCentavos } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
 
 interface ResumoFatura {
@@ -15,30 +15,6 @@ interface Resumo {
   ambientes: Record<string, number>;
   licencas: Record<string, number>;
   faturas: Record<string, ResumoFatura>;
-}
-
-function Contagens({ titulo, dados }: { titulo: string; dados: Record<string, number> }) {
-  // Estados zerados ficam de fora: uma parede de zeros esconde o que está
-  // acontecendo de verdade.
-  const comValor = Object.entries(dados).filter(([, quantidade]) => quantidade > 0);
-
-  return (
-    <section className="cartao">
-      <h2>{titulo}</h2>
-      {comValor.length === 0 ? (
-        <p className="vazio">Nada registrado ainda.</p>
-      ) : (
-        <ul className="contagens">
-          {comValor.map(([status, quantidade]) => (
-            <li key={status}>
-              <strong>{quantidade}</strong>
-              <span>{rotularStatus(status)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
 }
 
 export function Dashboard() {
@@ -56,49 +32,21 @@ export function Dashboard() {
       .finally(() => setCarregando(false));
   }, []);
 
-  if (carregando) return <p className="carregando">Carregando…</p>;
-  if (erro) return <Mensagem texto={erro} />;
+  if (carregando) return <><PageHeader kicker="Plataforma · Agora" title="Visão geral" /><Skeleton rows={6} /></>;
+  if (erro) return <ErrorMessage message={erro} onRetry={() => window.location.reload()} />;
   if (!resumo) return null;
 
-  const faturasComValor = Object.entries(resumo.faturas).filter(
-    ([, dados]) => dados.quantidade > 0
-  );
+  const assinantesAtivos = (resumo.assinantes.ATIVO ?? 0) + (resumo.assinantes.ATIVA ?? 0);
+  const falhas = resumo.ambientes.FALHOU ?? resumo.ambientes.ERRO ?? 0;
+  const faturasPagas = resumo.faturas.PAGA?.totalCentavos ?? 0;
+  const atrasadas = resumo.faturas.VENCIDA?.quantidade ?? 0;
 
   return (
     <>
-      <h1>Visão geral</h1>
-
-      <div className="grade">
-        <Contagens titulo="Assinantes" dados={resumo.assinantes} />
-        <Contagens titulo="Ambientes" dados={resumo.ambientes} />
-        <Contagens titulo="Licenças por unidade" dados={resumo.licencas} />
-
-        <section className="cartao">
-          <h2>Faturas</h2>
-          {faturasComValor.length === 0 ? (
-            <p className="vazio">Nada registrado ainda.</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Situação</th>
-                  <th>Qtd.</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {faturasComValor.map(([status, dados]) => (
-                  <tr key={status}>
-                    <td>{rotularStatus(status)}</td>
-                    <td>{dados.quantidade}</td>
-                    <td>{formatarCentavos(dados.totalCentavos)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
+      <PageHeader kicker="Plataforma · Agora" title="Visão geral" />
+      <StatBand stats={[{ label: "Falhas de provisionamento", value: falhas, context: falhas ? "Exigem ação da operação" : "Nenhuma falha aberta", critical: falhas > 0 }, { label: "MRR recebido", value: formatarCentavos(faturasPagas), context: "Faturas pagas no período consultado" }, { label: "Assinantes ativos", value: assinantesAtivos, context: "Contas com acesso à plataforma" }]} />
+      <StatBand secondary stats={[{ label: "Assinantes suspensos", value: resumo.assinantes.SUSPENSO ?? 0 }, { label: "Faturas em atraso", value: atrasadas }, { label: "Ambientes ativos", value: resumo.ambientes.ATIVO ?? 0 }, { label: "Licenças ativas", value: resumo.licencas.ATIVA ?? 0 }]} />
+      <p className="boundary-note">Cada assinante representa uma conta e uma fronteira independente de dados. Confirme a conta antes de executar ações operacionais.</p>
     </>
   );
 }
