@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Mensagem } from "../../components/Mensagem";
+import { Button, EmptyState, Input, Select, Skeleton } from "../../components/ui";
 import { api } from "../../services/api";
 import { formatarCentavos } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
@@ -99,7 +100,7 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
     return (
       <section className="cartao">
         <h2>Contratar assinatura</h2>
-        <p className="carregando">Carregando planos…</p>
+        <Skeleton rows={3} />
       </section>
     );
   }
@@ -108,10 +109,7 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
     return (
       <section className="cartao">
         <h2>Contratar assinatura</h2>
-        <Mensagem
-          tipo="vazio"
-          texto="Nenhum plano com versão em vigor. Cadastre um plano antes de contratar."
-        />
+        <EmptyState title="Nenhum plano disponível" description="Cadastre uma versão de plano em vigor antes de contratar uma assinatura." />
       </section>
     );
   }
@@ -120,10 +118,10 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
     <section className="cartao cartao-largo">
       <h2>Contratar assinatura</h2>
 
-      <form className="formulario" onSubmit={aoEnviar}>
+      <form className="form" onSubmit={aoEnviar} noValidate>
         <label className="campo-largo">
           Plano
-          <select
+          <Select id="plano" aria-describedby={problemaDe("planoVersaoId") ? "plano-erro" : undefined}
             value={dados.planoVersaoId}
             onChange={(evento) => alterar("planoVersaoId")(evento.target.value)}
           >
@@ -133,35 +131,36 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
                 {opcao.rotulo}
               </option>
             ))}
-          </select>
-          {problemaDe("planoVersaoId") && <small className="erro-campo">{problemaDe("planoVersaoId")}</small>}
+          </Select>
+          {problemaDe("planoVersaoId") && <small id="plano-erro" className="field-error">{problemaDe("planoVersaoId")}</small>}
         </label>
 
         <label>
           Situação inicial
-          <select
+          <Select id="status"
             value={dados.status}
             onChange={(evento) => alterar("status")(evento.target.value)}
           >
             <option value="ATIVA">Ativa</option>
             <option value="TESTE">Período de teste</option>
-          </select>
+          </Select>
         </label>
 
         <label>
           Teste até
-          <input
+          <Input id="teste-ate" aria-describedby={problemaDe("testeAte") ? "teste-ate-erro teste-ate-ajuda" : "teste-ate-ajuda"}
             type="date"
             value={dados.testeAte}
             onChange={(evento) => alterar("testeAte")(evento.target.value)}
             disabled={dados.status !== "TESTE"}
           />
-          {problemaDe("testeAte") && <small className="erro-campo">{problemaDe("testeAte")}</small>}
+          {dados.status !== "TESTE" && <small id="teste-ate-ajuda" className="field-help">Disponível apenas para assinaturas em período de teste.</small>}
+          {problemaDe("testeAte") && <small id="teste-ate-erro" className="field-error">{problemaDe("testeAte")}</small>}
         </label>
 
         <label>
           Dia de vencimento
-          <input
+          <Input id="vencimento" aria-describedby={problemaDe("diaVencimento") ? "vencimento-erro" : undefined}
             type="number"
             min={1}
             max={28}
@@ -169,30 +168,30 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
             onChange={(evento) => alterar("diaVencimento")(evento.target.value)}
           />
           {problemaDe("diaVencimento") && (
-            <small className="erro-campo">{problemaDe("diaVencimento")}</small>
+            <small id="vencimento-erro" className="field-error">{problemaDe("diaVencimento")}</small>
           )}
         </label>
 
-        <p className="secao-formulario">
+        <p className="form-section">
           Condição negociada — deixe em branco para usar o preço de tabela do plano.
         </p>
 
         <label>
           Alunos por faixa
-          <input
+          <Input
             type="number"
             min={1}
             value={dados.alunosPorBlocoNegociado}
             onChange={(evento) => alterar("alunosPorBlocoNegociado")(evento.target.value)}
           />
           {problemaDe("alunosPorBlocoNegociado") && (
-            <small className="erro-campo">{problemaDe("alunosPorBlocoNegociado")}</small>
+            <small className="field-error">{problemaDe("alunosPorBlocoNegociado")}</small>
           )}
         </label>
 
         <label>
           Preço por faixa (R$)
-          <input
+          <Input
             type="text"
             inputMode="decimal"
             placeholder="29,00"
@@ -200,28 +199,28 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
             onChange={(evento) => alterar("precoPorBlocoNegociadoReais")(evento.target.value)}
           />
           {problemaDe("precoPorBlocoNegociadoReais") && (
-            <small className="erro-campo">{problemaDe("precoPorBlocoNegociadoReais")}</small>
+            <small className="field-error">{problemaDe("precoPorBlocoNegociadoReais")}</small>
           )}
         </label>
 
         <label>
           Faixas mínimas por unidade
-          <input
+          <Input
             type="number"
             min={1}
             value={dados.blocosMinimosNegociado}
             onChange={(evento) => alterar("blocosMinimosNegociado")(evento.target.value)}
           />
           {problemaDe("blocosMinimosNegociado") && (
-            <small className="erro-campo">{problemaDe("blocosMinimosNegociado")}</small>
+            <small className="field-error">{problemaDe("blocosMinimosNegociado")}</small>
           )}
         </label>
 
-        <div className="campo-largo">
+        <div className="form-actions">
           <Mensagem texto={erro} />
-          <button type="submit" disabled={enviando}>
+          <Button type="submit" disabled={enviando}>
             {enviando ? "Contratando…" : "Contratar"}
-          </button>
+          </Button>
         </div>
       </form>
     </section>

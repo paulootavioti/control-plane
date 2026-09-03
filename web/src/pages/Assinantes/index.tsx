@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { Mensagem } from "../../components/Mensagem";
+import { Button, EmptyState, ErrorMessage, Input, PageHeader, Pagination, Skeleton, StatusBadge, Table } from "../../components/ui";
 import { api } from "../../services/api";
-import { formatarData, rotularStatus } from "../../utils/formatar";
+import { rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
 
 interface Assinante {
@@ -41,9 +41,11 @@ interface Pagina {
 
 export function Assinantes() {
   const [busca, setBusca] = useState("");
+  const [numeroPagina, setNumeroPagina] = useState(1);
   const [pagina, setPagina] = useState<Pagina | null>(null);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // A busca é aplicada com atraso para não disparar uma chamada por tecla.
@@ -54,7 +56,7 @@ export function Assinantes() {
       setCarregando(true);
       api
         .get<Pagina>("/assinantes", {
-          params: busca.trim() ? { busca: busca.trim() } : undefined,
+          params: { ...(busca.trim() ? { busca: busca.trim() } : {}), pagina: numeroPagina, limite: 20 },
           signal: controlador.signal,
         })
         .then((resposta) => {
@@ -74,99 +76,45 @@ export function Assinantes() {
       clearTimeout(tempo);
       controlador.abort();
     };
-  }, [busca]);
+  }, [busca, numeroPagina]);
 
   return (
     <>
-      <h1>Assinantes</h1>
-
-      <input
-        className="busca"
+      <PageHeader kicker="Plataforma · Fronteiras de dados" title="Assinantes" />
+      <div className="search-band">
+      <Input
         type="search"
-        placeholder="Buscar por nome, documento, e-mail ou slug"
+        aria-label="Buscar assinantes"
+        placeholder="Buscar por nome, tenantKey, documento ou e-mail do responsável"
         value={busca}
-        onChange={(evento) => setBusca(evento.target.value)}
+        onChange={(evento) => { setBusca(evento.target.value); setNumeroPagina(1); }}
       />
-
-      <Mensagem texto={erro} />
-
-      {carregando && <p className="carregando">Carregando…</p>}
+      {busca && <Button variant="ghost" onClick={() => { setBusca(""); setNumeroPagina(1); }}>Limpar busca</Button>}
+      </div>
+      <ErrorMessage message={erro} />
+      {carregando && <Skeleton rows={6} />}
 
       {!carregando && pagina && pagina.itens.length === 0 && (
-        <Mensagem
-          tipo="vazio"
-          texto={
-            busca.trim()
-              ? "Nenhum assinante encontrado para essa busca."
-              : "Nenhum assinante cadastrado ainda."
-          }
-        />
+        <EmptyState title={busca.trim() ? "Nenhum assinante corresponde à busca" : "Nenhum assinante cadastrado"} description={busca.trim() ? "Revise o termo ou limpe a busca para consultar todas as contas." : "Cadastre a primeira academia para iniciar o provisionamento."} action={busca.trim() ? <Button variant="secondary" onClick={() => setBusca("")}>Limpar busca</Button> : undefined} />
       )}
 
       {!carregando && pagina && pagina.itens.length > 0 && (
         <>
-          <p className="total">
-            {pagina.paginacao.total}{" "}
-            {pagina.paginacao.total === 1 ? "assinante" : "assinantes"}
-          </p>
-
-          <ul className="lista">
+          <Table label="Assinantes da plataforma"><thead><tr><th>Assinante</th><th>Plano</th><th>Unidades</th><th>Ambiente</th><th>Estado</th><th>Ação</th></tr></thead><tbody>
             {pagina.itens.map((assinante) => {
               const { assinatura } = assinante;
-
               return (
-                <li key={assinante.id} className="cartao">
-                  <div className="linha-titulo">
-                    <Link to={`/assinantes/${assinante.id}`} className="link-titulo">
-                      {assinante.nomeFantasia}
-                    </Link>
-                    <span className={`etiqueta etiqueta-${assinante.status.toLowerCase()}`}>
-                      {rotularStatus(assinante.status)}
-                    </span>
-                  </div>
-
-                  <dl className="atributos">
-                    <div>
-                      <dt>Slug</dt>
-                      <dd>{assinante.slug}</dd>
-                    </div>
-                    <div>
-                      <dt>Documento</dt>
-                      <dd>{assinante.documento}</dd>
-                    </div>
-                    <div>
-                      <dt>Cobrança</dt>
-                      <dd>{assinante.emailCobranca}</dd>
-                    </div>
-                    <div>
-                      <dt>Plano</dt>
-                      <dd>
-                        {assinatura
-                          ? `${assinatura.planoVersao.plano.nome} (v${assinatura.planoVersao.versao}) — ${rotularStatus(assinatura.status)}`
-                          : "Sem assinatura vigente"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Ambiente</dt>
-                      <dd>
-                        {assinante.ambiente
-                          ? rotularStatus(assinante.ambiente.status)
-                          : "Não provisionado"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Unidades licenciadas</dt>
-                      <dd>{assinante.totalLicencas}</dd>
-                    </div>
-                    <div>
-                      <dt>Cadastrado em</dt>
-                      <dd>{formatarData(assinante.criadoEm)}</dd>
-                    </div>
-                  </dl>
-                </li>
+                <tr key={assinante.id} tabIndex={0} onDoubleClick={() => navigate(`/assinantes/${assinante.id}`)} onKeyDown={(event) => { if (event.key === "Enter") navigate(`/assinantes/${assinante.id}`); }}>
+                  <td><span className="subscriber-cell"><strong>{assinante.nomeFantasia}</strong><small>{assinante.slug} · {assinante.emailCobranca}</small></span></td>
+                  <td>{assinatura ? `${assinatura.planoVersao.plano.nome} · v${assinatura.planoVersao.versao}` : "Sem plano"}</td>
+                  <td>{assinante.totalLicencas}</td><td>{assinante.ambiente ? rotularStatus(assinante.ambiente.status) : "Não provisionado"}</td>
+                  <td><StatusBadge status={assinante.status}>{rotularStatus(assinante.status)}</StatusBadge></td>
+                  <td><span className="row-actions"><Link to={`/assinantes/${assinante.id}`}>Abrir</Link><Button variant="icon" aria-label={`Mais ações para ${assinante.nomeFantasia}`}>⋯</Button></span></td>
+                </tr>
               );
             })}
-          </ul>
+          </tbody></Table>
+          <Pagination page={pagina.paginacao.pagina} totalPages={pagina.paginacao.totalPaginas} total={pagina.paginacao.total} onChange={setNumeroPagina} />
         </>
       )}
     </>

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "../contexts/useAuth";
+import { Button } from "./ui";
 
 const ROTULO_PERFIL = {
   OPERADOR: "Operador",
@@ -16,23 +17,16 @@ export function Layout() {
     <div className="app">
       <header className="topo">
         <div className="marca">
-          <span className="selo">SB</span>
-          <div>
-            <strong>Control Plane</strong>
-            <small>SysBelt</small>
-          </div>
+          <strong>SYS BELT</strong><small>CONTROL PLANE</small>
         </div>
 
         <nav className="menu">
-          {podeVer(["ADMIN_PLATAFORMA"]) && (
-            <NavLink to="/" end>
-              Visão geral
-            </NavLink>
-          )}
+          {podeVer(["ADMIN_PLATAFORMA"]) && <NavLink to="/" end>Visão geral</NavLink>}
           <NavLink to="/assinantes">Assinantes</NavLink>
           {podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) && (
-            <NavLink to="/billing">Billing</NavLink>
+            <NavLink to="/billing">Faturamento</NavLink>
           )}
+          {podeVer(["ADMIN_PLATAFORMA"]) && <NavLink to="/provisionamento">Provisionamento</NavLink>}
         </nav>
 
         <div className="operador">
@@ -40,9 +34,7 @@ export function Layout() {
             <strong>{operador?.nome}</strong>
             <small>{operador ? ROTULO_PERFIL[operador.perfil] : ""}</small>
           </div>
-          <button type="button" className="botao-texto" onClick={logout}>
-            Sair
-          </button>
+          <Button type="button" variant="secondary" onClick={logout}>Sair</Button>
         </div>
       </header>
 

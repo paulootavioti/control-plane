@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { Mensagem } from "../../components/Mensagem";
+import { EmptyState, ErrorMessage, PageHeader, Skeleton, StatusBadge, Table } from "../../components/ui";
 import { api } from "../../services/api";
 import { formatarCentavos, formatarData, rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
@@ -125,7 +125,7 @@ function BlocoAssinatura({ assinatura }: { assinatura: Assinatura }) {
     <section className="cartao">
       <h2>Assinatura vigente</h2>
 
-      <dl className="atributos">
+      <dl className="attribute-grid">
         <Atributo rotulo="Plano">
           {planoVersao.plano.nome} (v{planoVersao.versao})
         </Atributo>
@@ -156,7 +156,7 @@ function BlocoAmbiente({ ambiente }: { ambiente: Ambiente }) {
     <section className="cartao">
       <h2>Ambiente</h2>
 
-      <dl className="atributos">
+      <dl className="attribute-grid">
         <Atributo rotulo="Situação">{rotularStatus(ambiente.status)}</Atributo>
         <Atributo rotulo="Provedor">{ambiente.provider}</Atributo>
         <Atributo rotulo="Região">{ambiente.regiao}</Atributo>
@@ -192,7 +192,7 @@ function BlocoEventos({ eventos }: { eventos: EventoProvisionamento[] }) {
     return (
       <section className="cartao">
         <h2>Provisionamento</h2>
-        <p className="vazio">Nenhum evento registrado.</p>
+        <EmptyState title="Nenhum evento de provisionamento" description="Os eventos serão exibidos aqui quando o ambiente iniciar uma operação." />
       </section>
     );
   }
@@ -200,18 +200,18 @@ function BlocoEventos({ eventos }: { eventos: EventoProvisionamento[] }) {
   return (
     <section className="cartao">
       <h2>Provisionamento — últimos eventos</h2>
-      <ul className="eventos">
+      <ul className="timeline">
         {eventos.map((evento) => (
-          <li key={evento.id} className={evento.status === "FALHOU" ? "evento-falhou" : undefined}>
-            <div className="evento-linha">
+          <li key={evento.id} className={evento.status === "FALHOU" ? "event-failed" : undefined}>
+            <div className="event-line">
               <strong>{evento.tipo}</strong>
-              <span>{rotularStatus(evento.status)}</span>
+              <StatusBadge status={evento.status}>{rotularStatus(evento.status)}</StatusBadge>
               <small>{formatarData(evento.criadoEm)}</small>
             </div>
             {evento.etapaAtual && <small>Etapa: {evento.etapaAtual}</small>}
             {evento.tentativas > 1 && <small>{evento.tentativas} tentativas</small>}
             {/* Erro sanitizado: o backend já removeu credenciais antes de gravar. */}
-            {evento.erroSanitizado && <p className="evento-erro">{evento.erroSanitizado}</p>}
+            {evento.erroSanitizado && <p className="event-error">{evento.erroSanitizado}</p>}
             {evento.retomadaManualDisponivel && (
               <p className="evento-aviso">Esgotou as tentativas automáticas — exige retomada manual.</p>
             )}
@@ -247,11 +247,11 @@ export function Assinante() {
       .finally(() => setCarregando(false));
   }, [assinanteId, recarga]);
 
-  if (carregando) return <p className="carregando">Carregando…</p>;
+  if (carregando) return <><PageHeader kicker="Assinantes · Carregando" title="Detalhe da conta" /><Skeleton rows={7} /></>;
   if (erro) {
     return (
       <>
-        <Mensagem texto={erro} />
+        <ErrorMessage message={erro} />
         <Link to="/assinantes">Voltar para a lista</Link>
       </>
     );
@@ -264,17 +264,12 @@ export function Assinante() {
         <Link to="/assinantes">Assinantes</Link> · {assinante.slug}
       </p>
 
-      <div className="linha-titulo">
-        <h1>{assinante.nomeFantasia}</h1>
-        <span className={`etiqueta etiqueta-${assinante.status.toLowerCase()}`}>
-          {rotularStatus(assinante.status)}
-        </span>
-      </div>
+      <PageHeader kicker={`Conta · ${assinante.slug}`} title={assinante.nomeFantasia} badge={<StatusBadge status={assinante.status}>{rotularStatus(assinante.status)}</StatusBadge>} />
 
       <div className="grade-larga">
         <section className="cartao">
           <h2>Cadastro</h2>
-          <dl className="atributos">
+          <dl className="attribute-grid">
             <Atributo rotulo="Razão social">{assinante.razaoSocial ?? "—"}</Atributo>
             <Atributo rotulo="Documento">{assinante.documento}</Atributo>
             <Atributo rotulo="Slug">{assinante.slug}</Atributo>
@@ -336,7 +331,7 @@ export function Assinante() {
                 <li key={contato.id}>
                   <strong>
                     {contato.nome}
-                    {contato.principal && <span className="etiqueta">principal</span>}
+                    {contato.principal && <StatusBadge status="ativo">principal</StatusBadge>}
                   </strong>
                   <span>{rotularStatus(contato.tipo)}</span>
                   <small>{[contato.email, contato.telefone].filter(Boolean).join(" · ") || "—"}</small>
@@ -364,8 +359,7 @@ export function Assinante() {
           {assinante.faturas.length === 0 ? (
             <p className="vazio">Nenhuma fatura emitida.</p>
           ) : (
-            <div className="tabela-rolavel">
-              <table>
+            <Table label="Últimas doze faturas">
                 <thead>
                   <tr>
                     <th>Competência</th>
@@ -390,8 +384,7 @@ export function Assinante() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+            </Table>
           )}
         </section>
       </div>
