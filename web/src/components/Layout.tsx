@@ -29,6 +29,7 @@ export function Layout() {
             <NavLink to="/billing">Faturamento</NavLink>
           )}
           {podeVer(["ADMIN_PLATAFORMA"]) && <NavLink to="/provisionamento">Provisionamento</NavLink>}
+          {podeVer(["ADMIN_PLATAFORMA"]) && <NavLink to="/auditoria">Auditoria</NavLink>}
         </nav>
 
         <div className="operador">
