@@ -2,6 +2,7 @@ import { Prisma, PrismaClient, TipoContatoAssinante } from "@prisma/client";
 import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
 
 export interface DadosNovoAssinante {
+  produtoId: string;
   nomeFantasia: string;
   razaoSocial?: string;
   documento: string;
@@ -25,6 +26,7 @@ export class CriarAssinanteService {
       return await this.db.$transaction(async (tx) => {
         const assinante = await tx.assinante.create({
         data: {
+          produtoCodigo: dados.produtoId,
           nomeFantasia: dados.nomeFantasia,
           razaoSocial: dados.razaoSocial ?? null,
           documento: dados.documento,
@@ -38,6 +40,7 @@ export class CriarAssinanteService {
           id: true, nomeFantasia: true, razaoSocial: true, documento: true,
           emailCobranca: true, telefone: true, slug: true, status: true, criadoEm: true,
           contatos: { select: { id: true, nome: true, email: true, telefone: true, tipo: true, principal: true } },
+          produto: { select: { codigo: true, nome: true } },
         },
         });
         await tx.auditLogPlataforma.create({ data: {
@@ -46,7 +49,7 @@ export class CriarAssinanteService {
           acao: "ASSINANTE_CRIADO",
           alvoTipo: "ASSINANTE",
           alvoId: assinante.id,
-          mudancas: { status: "PROSPECT", slug: assinante.slug, totalContatos: dados.contatos.length },
+          mudancas: { status: "PROSPECT", produtoId: dados.produtoId, slug: assinante.slug, totalContatos: dados.contatos.length },
         } });
         return assinante;
       });

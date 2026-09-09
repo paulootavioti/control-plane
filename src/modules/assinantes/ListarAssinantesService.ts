@@ -3,6 +3,7 @@ import { PrismaClient, StatusAssinante } from "@prisma/client";
 export interface FiltrosAssinantes {
   busca?: string;
   status?: StatusAssinante;
+  produto?: string;
   pagina: number;
   limite: number;
 }
@@ -13,6 +14,7 @@ export class ListarAssinantesService {
   async execute(filtros: FiltrosAssinantes) {
     const where = {
       ...(filtros.status ? { status: filtros.status } : {}),
+      ...(filtros.produto ? { produtoCodigo: filtros.produto } : {}),
       ...(filtros.busca ? {
         OR: [
           { nomeFantasia: { contains: filtros.busca, mode: "insensitive" as const } },
@@ -33,6 +35,7 @@ export class ListarAssinantesService {
         select: {
           id: true, nomeFantasia: true, documento: true, emailCobranca: true,
           telefone: true, slug: true, status: true, criadoEm: true,
+          produto: { select: { codigo: true, nome: true } },
           ambiente: { select: { id: true, status: true, schemaVersaoAtual: true } },
           assinaturas: {
             where: { encerradaEm: null }, take: 1, orderBy: { criadoEm: "desc" },

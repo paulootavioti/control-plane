@@ -87,13 +87,14 @@ planosRoutes.post("/:planoId/versoes", autenticarOperador(["ADMIN_PLATAFORMA"]),
 
 const filtrosSchema = z.object({
   incluirHistorico: z.enum(["true", "false"]).transform((valor) => valor === "true").default(false),
+  produto: z.enum(["sysbelt", "mecanix", "psyche"]).optional(),
 }).strict();
 
 planosRoutes.get("/", autenticarOperador(), async (request, response) => {
   const validacao = filtrosSchema.safeParse(request.query);
   if (!validacao.success) return response.status(400).json({ mensagem: "Filtros inválidos." });
 
-  const planos = await new ListarPlanosService(prisma).execute(validacao.data.incluirHistorico);
+  const planos = await new ListarPlanosService(prisma).execute(validacao.data.incluirHistorico, new Date(), validacao.data.produto);
   return response.json({ itens: planos });
 });
 

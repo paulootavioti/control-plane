@@ -132,6 +132,18 @@ enum StatusExecucaoWorkerBilling {
   FALHOU
 }
 
+enum IntencaoSolicitacaoAssinatura {
+  TESTE
+  ASSINATURA_IMEDIATA
+}
+
+enum StatusSolicitacaoAssinatura {
+  RECEBIDA
+  APROVADA
+  RECUSADA
+  CONVERTIDA
+}
+
 model Produto {
   codigo                      String                      @id @db.VarChar(30)
   nome                        String
@@ -144,6 +156,8 @@ model Produto {
   planos      Plano[]
   assinaturas Assinatura[]
   tenants     TenantProduto[]
+  assinantes  Assinante[]
+  solicitacoes SolicitacaoAssinatura[]
 }
 
 model TenantProduto {
@@ -179,6 +193,7 @@ model OperadorPlataforma {
   criadoEm      DateTime             @default(now())
   atualizadoEm  DateTime             @updatedAt
   auditorias    AuditLogPlataforma[]
+  solicitacoesDecididas SolicitacaoAssinatura[]
 
   @@index([ativo, perfil])
 }
@@ -194,6 +209,7 @@ model Assinante {
   status        StatusAssinante @default(PROSPECT)
   criadoEm      DateTime        @default(now())
   atualizadoEm  DateTime        @updatedAt
+  produtoCodigo String          @db.VarChar(30)
 
   contatos          ContatoAssinante[]
   assinaturas       Assinatura[]
@@ -203,8 +219,46 @@ model Assinante {
   snapshotsContagem SnapshotContagem[]
   auditorias        AuditLogPlataforma[]
   tenantsProduto    TenantProduto[]
+  produto           Produto                  @relation(fields: [produtoCodigo], references: [codigo], onDelete: Restrict)
+  solicitacoes      SolicitacaoAssinatura[]
 
   @@index([status])
+  @@index([produtoCodigo, status])
+}
+
+model SolicitacaoAssinatura {
+  id              String                       @id @default(uuid()) @db.Uuid
+  produtoId       String                       @db.VarChar(30)
+  intencao        IntencaoSolicitacaoAssinatura
+  nomeOrganizacao String
+  documento       String
+  responsavel     String
+  email           String
+  telefone        String?
+  origem          Json?
+  status          StatusSolicitacaoAssinatura  @default(RECEBIDA)
+  motivo          String?
+  assinanteId     String?                      @db.Uuid
+  criadoEm        DateTime                     @default(now())
+  decididoEm      DateTime?
+  decididoPor     String?                      @db.Uuid
+
+  produto   Produto              @relation(fields: [produtoId], references: [codigo], onDelete: Restrict)
+  assinante Assinante?           @relation(fields: [assinanteId], references: [id], onDelete: SetNull)
+  decisor    OperadorPlataforma? @relation(fields: [decididoPor], references: [id], onDelete: Restrict)
+
+  @@index([produtoId, status, criadoEm])
+  @@index([status, intencao, criadoEm])
+  @@index([documento])
+}
+
+model LimiteSolicitacaoPublica {
+  chave      String   @id @db.VarChar(200)
+  janela     DateTime
+  quantidade Int      @default(0)
+  atualizadoEm DateTime @updatedAt
+
+  @@index([janela])
 }
 
 model AuditLogPlataforma {

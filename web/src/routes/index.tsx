@@ -8,6 +8,9 @@ import { Billing } from "../pages/Billing";
 import { Login } from "../pages/Login";
 import { Provisionamento } from "../pages/Provisionamento";
 import { PrivateRoute } from "./PrivateRoute";
+import { Solicitacoes } from "../pages/Solicitacoes";
+import { NovoAssinante } from "../pages/NovoAssinante";
+import { Planos } from "../pages/Planos";
 
 export function AppRoutes() {
   return (
@@ -25,7 +28,10 @@ export function AppRoutes() {
         >
           <Route index element={<Dashboard />} />
           <Route path="assinantes" element={<Assinantes />} />
+          <Route path="assinantes/novo" element={<PrivateRoute perfis={["OPERADOR", "ADMIN_PLATAFORMA"]}><NovoAssinante /></PrivateRoute>} />
           <Route path="assinantes/:assinanteId" element={<Assinante />} />
+          <Route path="solicitacoes" element={<Solicitacoes />} />
+          <Route path="planos" element={<Planos />} />
           <Route path="billing" element={<PrivateRoute perfis={["FINANCEIRO", "ADMIN_PLATAFORMA"]}><Billing /></PrivateRoute>} />
           <Route path="provisionamento" element={<PrivateRoute perfis={["ADMIN_PLATAFORMA"]}><Provisionamento /></PrivateRoute>} />
         </Route>

@@ -31,7 +31,7 @@ describe("solicitação de provisionamento", () => {
         update: vi.fn(),
       },
       assinatura: { findFirst: vi.fn().mockResolvedValue({ id: "assinatura-1" }) },
-      ambienteTenant: { create: vi.fn().mockResolvedValue({
+      ambienteTenant: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({
         id: "ambiente-1", tenantKey: "tenant-1", eventos: [{ id: "evento-1" }],
       }) },
       auditLogPlataforma: { create: vi.fn() },

@@ -23,7 +23,7 @@ export class CriarOperadorInicialService {
       }
 
       const administradores = await tx.operadorPlataforma.count({
-        where: { perfil: PerfilOperador.ADMIN_PLATAFORMA },
+        where: { perfil: PerfilOperador.ADMIN_PLATAFORMA, ativo: true },
       });
       if (administradores > 0) throw new Error("OPERADOR_INICIAL_JA_CONFIGURADO");
 

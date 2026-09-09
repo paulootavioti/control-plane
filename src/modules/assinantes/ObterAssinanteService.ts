@@ -17,6 +17,7 @@ export class ObterAssinanteService {
         status: true,
         criadoEm: true,
         atualizadoEm: true,
+        produto: { select: { codigo: true, nome: true } },
         contatos: {
           orderBy: [{ principal: "desc" }, { nome: "asc" }],
           select: {

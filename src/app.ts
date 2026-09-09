@@ -18,6 +18,7 @@ import { billingRoutes } from "./modules/billing/routes";
 import { VerificarProntidaoService } from "./modules/saude/VerificarProntidaoService";
 import { prisma } from "./shared/prisma";
 import { restringirCors } from "./shared/corsSeguro";
+import { solicitacoesRoutes } from "./modules/solicitacoes/routes";
 
 export const app = express();
 
@@ -28,10 +29,11 @@ app.use(cors({
   origin: true,
   credentials: false,
   methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Authorization", "Content-Type"],
+  allowedHeaders: ["Authorization", "Content-Type", "x-control-plane-public-key"],
 }));
 app.use(express.json());
 app.use("/auth", authRoutes);
+app.use("/solicitacoes", solicitacoesRoutes);
 app.use("/integracao", integracaoRoutes);
 app.use("/provisionamento", provisionamentoRoutes);
 app.use("/concessoes", concessaoRoutes);

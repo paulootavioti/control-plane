@@ -25,6 +25,7 @@ interface Assinante {
     planoVersao: { versao: number; plano: { id: string; nome: string } };
   } | null;
   totalLicencas: number;
+  produto: { codigo: string; nome: string };
 }
 
 interface Paginacao {
@@ -80,7 +81,7 @@ export function Assinantes() {
 
   return (
     <>
-      <PageHeader kicker="Plataforma · Fronteiras de dados" title="Assinantes" />
+      <PageHeader kicker="Plataforma · Fronteiras de dados" title="Assinantes" actions={<Button onClick={() => navigate("/assinantes/novo")}>Novo assinante</Button>} />
       <div className="search-band">
       <Input
         type="search"
@@ -100,12 +101,13 @@ export function Assinantes() {
 
       {!carregando && pagina && pagina.itens.length > 0 && (
         <>
-          <Table label="Assinantes da plataforma"><thead><tr><th>Assinante</th><th>Plano</th><th>Unidades</th><th>Ambiente</th><th>Estado</th><th>Ação</th></tr></thead><tbody>
+          <Table label="Assinantes da plataforma"><thead><tr><th>Assinante</th><th>Produto</th><th>Plano</th><th>Unidades</th><th>Ambiente</th><th>Estado</th><th>Ação</th></tr></thead><tbody>
             {pagina.itens.map((assinante) => {
               const { assinatura } = assinante;
               return (
                 <tr key={assinante.id} tabIndex={0} onDoubleClick={() => navigate(`/assinantes/${assinante.id}`)} onKeyDown={(event) => { if (event.key === "Enter") navigate(`/assinantes/${assinante.id}`); }}>
                   <td><span className="subscriber-cell"><strong>{assinante.nomeFantasia}</strong><small>{assinante.slug} · {assinante.emailCobranca}</small></span></td>
+                  <td>{assinante.produto.nome}</td>
                   <td>{assinatura ? `${assinatura.planoVersao.plano.nome} · v${assinatura.planoVersao.versao}` : "Sem plano"}</td>
                   <td>{assinante.totalLicencas}</td><td>{assinante.ambiente ? rotularStatus(assinante.ambiente.status) : "Não provisionado"}</td>
                   <td><StatusBadge status={assinante.status}>{rotularStatus(assinante.status)}</StatusBadge></td>

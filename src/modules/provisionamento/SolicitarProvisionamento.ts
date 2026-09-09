@@ -1,6 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { randomUUID } from "node:crypto";
 import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
+import { enfileirarProvisionamento } from "./enfileirarProvisionamento";
 
 export type DadosSolicitacao = {
   assinanteId: string;
@@ -36,29 +36,9 @@ export class SolicitarProvisionamento {
         });
         if (!assinatura) throw new Error("ASSINATURA_NAO_ELEGIVEL");
 
-        const ambiente = await tx.ambienteTenant.create({ data: {
-          assinanteId: dados.assinanteId,
-          tenantKey: randomUUID(),
-          regiao: dados.regiao,
-          schemaVersaoDesejada: dados.schemaVersaoDesejada,
-          eventos: { create: { tipo: "CRIAR_AMBIENTE", chaveIdempotencia } },
-        }, include: { eventos: { where: { chaveIdempotencia }, select: { id: true } } } });
-        await tx.assinante.update({
-          where: { id: dados.assinanteId }, data: { status: "EM_PROVISIONAMENTO" },
-        });
-        await tx.auditLogPlataforma.create({ data: {
-          ...auditoria,
-          assinanteId: dados.assinanteId,
-          acao: "PROVISIONAMENTO_SOLICITADO",
-          alvoTipo: "AMBIENTE_TENANT",
-          alvoId: ambiente.id,
-          mudancas: {
-            assinaturaId: assinatura.id,
-            regiao: dados.regiao,
-            schemaVersaoDesejada: dados.schemaVersaoDesejada,
-          },
-        } });
-        return { ambienteId: ambiente.id, tenantKey: ambiente.tenantKey, eventoId: ambiente.eventos[0].id, duplicado: false };
+        return enfileirarProvisionamento(tx, {
+          ...dados, assinaturaId: assinatura.id,
+        }, auditoria);
       });
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") {

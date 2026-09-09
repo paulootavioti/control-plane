@@ -66,6 +66,6 @@ export class EnviarConcessaoService {
     if (resultado.revisao !== concessao.revisao || typeof resultado.duplicada !== "boolean") {
       throw new Error("RESPOSTA_TENANT_INVALIDA");
     }
-    return { revisao: concessao.revisao, duplicada: resultado.duplicada, destino: url };
+    return { revisao: concessao.revisao, expiraEm: concessao.expiraEm, duplicada: resultado.duplicada, destino: url };
   }
 }

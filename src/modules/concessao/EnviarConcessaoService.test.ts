@@ -34,6 +34,7 @@ describe("entrega de concessão", () => {
     );
     expect(resultado).toEqual({
       revisao: 7, duplicada: false,
+      expiraEm: concessao.expiraEm,
       destino: "https://academia-centro.app.sysbelt.com.br/api/integracao/control-plane/v1/concessao",
     });
   });

@@ -23,6 +23,8 @@ export function Layout() {
         <nav className="menu">
           {podeVer(["ADMIN_PLATAFORMA"]) && <NavLink to="/" end>Visão geral</NavLink>}
           <NavLink to="/assinantes">Assinantes</NavLink>
+          <NavLink to="/solicitacoes">Solicitações</NavLink>
+          <NavLink to="/planos">Planos</NavLink>
           {podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) && (
             <NavLink to="/billing">Faturamento</NavLink>
           )}

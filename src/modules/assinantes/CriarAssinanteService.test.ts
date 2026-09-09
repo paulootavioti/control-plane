@@ -14,6 +14,7 @@ describe("cadastro de assinante", () => {
   it("cria prospect com contatos na mesma operação", async () => {
     const { create, auditCreate, db } = banco({ id: "a1", status: "PROSPECT", slug: "academia-centro" });
     const resultado = await new CriarAssinanteService(db as never).execute({
+      produtoId: "sysbelt",
       nomeFantasia: "Academia Centro",
       documento: "12345678000199",
       emailCobranca: "financeiro@centro.test",
@@ -34,6 +35,7 @@ describe("cadastro de assinante", () => {
   it("não inicia assinatura ou provisionamento implicitamente", async () => {
     const { create, db } = banco({ id: "a1", slug: "academia-centro" });
     await new CriarAssinanteService(db as never).execute({
+      produtoId: "sysbelt",
       nomeFantasia: "Academia Centro",
       documento: "12345678000199",
       emailCobranca: "financeiro@centro.test",

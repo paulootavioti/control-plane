@@ -31,6 +31,11 @@ entrada inválida, autenticação inválida, recurso ausente e conflito de estad
 
 | Método e caminho | Acesso | Finalidade |
 |---|---|---|
+| `POST /solicitacoes` | Público, chave por produto, limite por IP/produto | Receber intenção sem criar assinante |
+| `GET /solicitacoes` | Autenticado | Fila paginada e filtrável |
+| `POST /solicitacoes/:id/aprovar` | `OPERADOR`, `ADMIN_PLATAFORMA` | Aprovar de forma idempotente |
+| `POST /solicitacoes/:id/recusar` | `OPERADOR`, `ADMIN_PLATAFORMA` | Recusar com motivo obrigatório |
+| `POST /solicitacoes/:id/converter` | `OPERADOR`, `ADMIN_PLATAFORMA` | Criar prospect e contato principal |
 | `GET /planos` | Autenticado | Planos vigentes ou histórico |
 | `GET /planos/:id` | Autenticado | Plano e versões |
 | `POST /planos` | `ADMIN_PLATAFORMA` | Criar plano e versão inicial |
@@ -97,8 +102,8 @@ entrada inválida, autenticação inválida, recurso ausente e conflito de estad
 | `POST /.netlify/functions/provisionar-background` | Segredo interno | Consumir fila quando habilitada |
 
 `PROVISIONAMENTO_REAL_HABILITADO=false` impede o worker de adquirir eventos.
-Criar uma solicitação não cria infraestrutura enquanto essa flag estiver
-desligada.
+A contratação registra automaticamente o evento na mesma transação, mas não
+cria infraestrutura enquanto essa flag estiver desligada.
 
 ## Billing
 

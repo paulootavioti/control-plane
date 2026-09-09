@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient, StatusAssinatura } from "@prisma/client";
 import { ContextoAuditoria } from "../auditoria/contextoAuditoria";
+import { enfileirarProvisionamento } from "../provisionamento/enfileirarProvisionamento";
 
 export interface DadosContratacao {
   planoVersaoId: string;
@@ -21,7 +22,7 @@ export class ContratarAssinaturaService {
     try {
       return await this.db.$transaction(async (tx) => {
         const assinante = await tx.assinante.findUnique({
-          where: { id: assinanteId }, select: { status: true },
+          where: { id: assinanteId }, select: { status: true, produtoCodigo: true },
         });
         if (!assinante) throw new Error("ASSINANTE_NAO_ENCONTRADO");
         if (assinante.status !== "PROSPECT") throw new Error("ASSINANTE_NAO_ELEGIVEL");
@@ -34,6 +35,7 @@ export class ContratarAssinaturaService {
           (planoVersao.vigenteAte && planoVersao.vigenteAte <= agora)) {
           throw new Error("PLANO_VERSAO_NAO_ELEGIVEL");
         }
+        if (planoVersao.plano.produtoCodigo !== assinante.produtoCodigo) throw new Error("PLANO_PRODUTO_DIVERGENTE");
 
         const corrente = await tx.assinatura.findFirst({
           where: { assinanteId, produtoCodigo: planoVersao.plano.produtoCodigo, encerradaEm: null }, select: { id: true },
@@ -63,7 +65,12 @@ export class ContratarAssinaturaService {
           alvoId: assinatura.id,
           mudancas: { status: assinatura.status, planoVersaoId: assinatura.planoVersaoId, diaVencimento: assinatura.diaVencimento },
         } });
-        return assinatura;
+        const provisionamento = await enfileirarProvisionamento(tx, {
+          assinanteId, assinaturaId: assinatura.id,
+          regiao: process.env.NEON_REGION_ID || "aws-sa-east-1",
+          schemaVersaoDesejada: process.env.CONTROL_PLANE_TENANT_SCHEMA_VERSION || "latest",
+        }, auditoria);
+        return { ...assinatura, provisionamento };
       });
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") {

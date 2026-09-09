@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { EmptyState, ErrorMessage, PageHeader, Skeleton, StatusBadge, Table } from "../../components/ui";
+import { Button, EmptyState, ErrorMessage, PageHeader, Skeleton, StatusBadge, Table, Toast } from "../../components/ui";
 import { api } from "../../services/api";
 import { formatarCentavos, formatarData, rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
@@ -86,6 +86,7 @@ interface DetalheAssinante {
   status: string;
   criadoEm: string;
   atualizadoEm: string;
+  produto: { codigo: string; nome: string };
   contatos: Contato[];
   licencas: Licenca[];
   ambiente: Ambiente | null;
@@ -228,6 +229,24 @@ export function Assinante() {
   const [assinante, setAssinante] = useState<DetalheAssinante | null>(null);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [mensagemAcao, setMensagemAcao] = useState("");
+
+  async function enviarConcessao() {
+    if (!assinante?.ambiente) return;
+    try {
+      const resposta = await api.post<{ revisao: number; expiraEm: string }>(`/concessoes/${assinante.ambiente.id}/enviar`);
+      setMensagemAcao(`Concessão revisão ${resposta.data.revisao} enviada; expira em ${formatarData(resposta.data.expiraEm)}.`);
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível enviar a concessão.")); }
+  }
+
+  async function retomar(eventoId: string) {
+    try {
+      await api.post(`/provisionamento/solicitacoes/${eventoId}/retomar`);
+      setMensagemAcao("Evento devolvido à fila de provisionamento.");
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível retomar o evento.")); }
+  }
 
   // `recarga` existe só para refazer a busca depois de uma contratação, sem
   // precisar recarregar a página inteira e perder a posição de rolagem.
@@ -265,11 +284,13 @@ export function Assinante() {
       </p>
 
       <PageHeader kicker={`Conta · ${assinante.slug}`} title={assinante.nomeFantasia} badge={<StatusBadge status={assinante.status}>{rotularStatus(assinante.status)}</StatusBadge>} />
+      <Toast message={mensagemAcao} />
 
       <div className="grade-larga">
         <section className="cartao">
           <h2>Cadastro</h2>
           <dl className="attribute-grid">
+            <Atributo rotulo="Produto">{assinante.produto.nome}</Atributo>
             <Atributo rotulo="Razão social">{assinante.razaoSocial ?? "—"}</Atributo>
             <Atributo rotulo="Documento">{assinante.documento}</Atributo>
             <Atributo rotulo="Slug">{assinante.slug}</Atributo>
@@ -291,7 +312,7 @@ export function Assinante() {
         )}
 
         {assinante.ambiente ? (
-          <BlocoAmbiente ambiente={assinante.ambiente} />
+          <><BlocoAmbiente ambiente={assinante.ambiente} />{podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && <Button variant="secondary" onClick={enviarConcessao}>Reenviar concessão</Button>}</>
         ) : (
           <section className="cartao">
             <h2>Ambiente</h2>
@@ -341,7 +362,7 @@ export function Assinante() {
           )}
         </section>
 
-        {assinante.ambiente && <BlocoEventos eventos={assinante.ambiente.eventos} />}
+        {assinante.ambiente && <><BlocoEventos eventos={assinante.ambiente.eventos} />{assinante.ambiente.eventos.filter((evento) => evento.retomadaManualDisponivel).map((evento) => <Button key={evento.id} variant="secondary" onClick={() => retomar(evento.id)}>Retomar {evento.tipo}</Button>)}</>}
 
         {/* Contratar é ação de OPERADOR e ADMIN_PLATAFORMA — os mesmos perfis
             que a rota exige. Esconder para os demais evita oferecer um botão
@@ -350,6 +371,7 @@ export function Assinante() {
           podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && (
             <FormularioContratacao
               assinanteId={assinante.id}
+              produto={assinante.produto.codigo}
               aoContratar={() => setRecarga((atual) => atual + 1)}
             />
           )}

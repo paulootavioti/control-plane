@@ -32,10 +32,11 @@ interface Plano {
 
 interface Props {
   assinanteId: string;
+  produto: string;
   aoContratar: () => void;
 }
 
-export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
+export function FormularioContratacao({ assinanteId, produto, aoContratar }: Props) {
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [dados, setDados] = useState<Dados>(CONTRATACAO_VAZIA);
   const [problemas, setProblemas] = useState<ProblemaContratacao[]>([]);
@@ -45,13 +46,13 @@ export function FormularioContratacao({ assinanteId, aoContratar }: Props) {
 
   useEffect(() => {
     api
-      .get<{ itens: Plano[] }>("/planos")
+      .get<{ itens: Plano[] }>("/planos", { params: { produto } })
       .then((resposta) => setPlanos(resposta.data.itens))
       .catch((erroDaBusca) =>
         setErro(getApiErrorMessage(erroDaBusca, "Não foi possível carregar os planos."))
       )
       .finally(() => setCarregandoPlanos(false));
-  }, []);
+  }, [produto]);
 
   // A listagem já vem filtrada às versões em vigor. Um plano sem versão vigente
   // não pode ser contratado, então nem aparece na escolha.

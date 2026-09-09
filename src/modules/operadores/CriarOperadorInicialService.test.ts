@@ -16,6 +16,9 @@ describe("bootstrap do operador inicial", () => {
     } };
     await expect(new CriarOperadorInicialService(banco(tx) as never).execute(dados))
       .resolves.toEqual({ criado: true, operadorId: "admin-1" });
+    expect(tx.operadorPlataforma.count).toHaveBeenCalledWith({
+      where: { perfil: PerfilOperador.ADMIN_PLATAFORMA, ativo: true },
+    });
     expect(create).toHaveBeenCalledWith({
       data: { ...dados, perfil: PerfilOperador.ADMIN_PLATAFORMA }, select: { id: true },
     });

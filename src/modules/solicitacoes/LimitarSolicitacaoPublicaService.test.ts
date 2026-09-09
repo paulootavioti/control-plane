@@ -1,0 +1,2 @@
+import { expect,it,vi } from "vitest";import { LimitarSolicitacaoPublicaService } from "./LimitarSolicitacaoPublicaService";
+it("aplica em conjunto limites distribuídos por IP e produto",async()=>{const query=vi.fn().mockReturnValue("query");const db={$queryRaw:query,$transaction:vi.fn().mockResolvedValue([[{quantidade:11}],[{quantidade:20}]])};expect(await new LimitarSolicitacaoPublicaService(db as never).consumir("203.0.113.1","sysbelt")).toBe(false);expect(query).toHaveBeenCalledTimes(2);});

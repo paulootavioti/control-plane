@@ -43,12 +43,15 @@ administrador.
 
 ## 4. Assinante e assinatura
 
-1. Cadastre a organização; ela nasce `PROSPECT`.
-2. Cadastre o contato principal separadamente ou no cadastro inicial.
-3. Contrate uma versão vigente em `TESTE` ou `ATIVA`.
-4. Confirme no detalhe que produto, condições negociadas e vencimento estão
+1. Receba a solicitação do CTA com chave pública do produto; apenas testes que
+   cumprem todos os critérios podem ser aprovados automaticamente.
+2. Aprove (ou recuse com motivo) antes de converter a organização em `PROSPECT`.
+3. A conversão cria o contato principal, mas não contrata nem provisiona.
+4. Contrate uma versão vigente do mesmo produto em `TESTE` ou `ATIVA`.
+5. A contratação registra o evento de provisionamento; com a flag desligada ele permanece na fila.
+6. Confirme no detalhe que produto, condições negociadas e vencimento estão
    corretos.
-5. Toda mudança deve aparecer na auditoria sanitizada.
+7. Toda mudança deve aparecer na auditoria sanitizada.
 
 ## 5. Ambiente tenant
 

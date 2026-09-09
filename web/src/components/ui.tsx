@@ -5,6 +5,7 @@ export function Button({ variant = "primary", className = "", ...props }: Button
 }
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) { return <input className={`input ${props.className ?? ""}`.trim()} {...props} />; }
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) { return <select className={`input select ${props.className ?? ""}`.trim()} {...props} />; }
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) { return <section className={`cartao ${className}`.trim()}>{children}</section>; }
 export function Field({ id, label, help, error, children, wide = false }: { id: string; label: string; help?: string; error?: string; children: ReactNode; wide?: boolean }) {
   return <div className={`field${wide ? " field-wide" : ""}`}><label htmlFor={id}>{label}</label>{children}{help && <small id={`${id}-help`} className="field-help">{help}</small>}{error && <small id={`${id}-error`} className="field-error">{error}</small>}</div>;
 }
