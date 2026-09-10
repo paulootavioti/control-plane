@@ -21,6 +21,24 @@ function validarSlug(slug: string): string {
   return normalizado;
 }
 
+function destinoTenant(produto: string, slug: string): string {
+  const bruto = process.env.TENANT_PRODUCT_HOST_MAP?.trim();
+  if (bruto) {
+    let mapa: Record<string, string>;
+    try { mapa = JSON.parse(bruto) as Record<string, string>; }
+    catch { throw new Error("TENANT_PRODUCT_HOST_MAP inválido."); }
+    const configurado = mapa[`${produto}:${slug}`];
+    if (configurado) {
+      const url = new URL(configurado);
+      if (url.protocol !== "https:" || url.pathname !== "/" || url.search || url.hash) {
+        throw new Error("TENANT_PRODUCT_HOST_MAP inválido.");
+      }
+      return url.origin;
+    }
+  }
+  return `https://${slug}.${dominioTenant()}`;
+}
+
 export class EnviarConcessaoService {
   private readonly gerador: GeradorConcessao;
 
@@ -35,14 +53,13 @@ export class EnviarConcessaoService {
   async execute(ambienteId: string) {
     const ambiente = await this.db.ambienteTenant.findUnique({
       where: { id: ambienteId },
-      select: { assinante: { select: { slug: true } } },
+      select: { assinante: { select: { slug: true, produtoCodigo: true } } },
     });
     if (!ambiente) throw new Error("AMBIENTE_NAO_ENCONTRADO");
 
     const slug = validarSlug(ambiente.assinante.slug);
-    const dominio = dominioTenant();
     const concessao = await this.gerador.execute(ambienteId);
-    const url = `https://${slug}.${dominio}/api/integracao/control-plane/v1/concessao`;
+    const url = `${destinoTenant(ambiente.assinante.produtoCodigo, slug)}/api/integracao/control-plane/v1/concessao`;
 
     let resposta: Response;
     try {

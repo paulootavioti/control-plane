@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { Button, EmptyState, ErrorMessage, PageHeader, Skeleton, StatusBadge, Table, Toast } from "../../components/ui";
+import { Button, EmptyState, ErrorMessage, Field, Input, PageHeader, Skeleton, StatusBadge, Table, Toast } from "../../components/ui";
 import { api } from "../../services/api";
 import { formatarCentavos, formatarData, rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
@@ -230,6 +230,22 @@ export function Assinante() {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [mensagemAcao, setMensagemAcao] = useState("");
+  const [tenantKeyExistente, setTenantKeyExistente] = useState("");
+  const [schemaTenantExistente, setSchemaTenantExistente] = useState("3.0.2026.09.01");
+  const [vinculandoTenant, setVinculandoTenant] = useState(false);
+
+  async function vincularTenantCompartilhado() {
+    if (!assinante) return;
+    setVinculandoTenant(true);
+    try {
+      await api.post(`/assinantes/${assinante.id}/tenant-compartilhado`, {
+        tenantKey: tenantKeyExistente.trim(), schemaVersao: schemaTenantExistente.trim(),
+      });
+      setMensagemAcao("Tenant compartilhado vinculado. Ele será ativado somente após a contratação.");
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível vincular o tenant compartilhado.")); }
+    finally { setVinculandoTenant(false); }
+  }
 
   async function enviarConcessao() {
     if (!assinante?.ambiente) return;
@@ -319,6 +335,23 @@ export function Assinante() {
             <p className="vazio">Ainda não provisionado.</p>
           </section>
         )}
+
+        {!assinante.ambiente && assinante.status === "PROSPECT" && assinante.produto.codigo === "sysbelt" &&
+          podeVer(["ADMIN_PLATAFORMA"]) && (
+            <section className="cartao">
+              <h2>Vincular tenant existente</h2>
+              <p>Use a identidade técnica da conta já existente no banco compartilhado do SysBelt.</p>
+              <Field id="tenant-key-existente" label="Tenant key">
+                <Input id="tenant-key-existente" value={tenantKeyExistente} onChange={(evento) => setTenantKeyExistente(evento.target.value)} placeholder="00000000-0000-0000-0000-000000000000" />
+              </Field>
+              <Field id="schema-tenant-existente" label="Versão do schema">
+                <Input id="schema-tenant-existente" value={schemaTenantExistente} onChange={(evento) => setSchemaTenantExistente(evento.target.value)} />
+              </Field>
+              <Button disabled={vinculandoTenant || !tenantKeyExistente.trim() || !schemaTenantExistente.trim()} onClick={vincularTenantCompartilhado}>
+                {vinculandoTenant ? "Vinculando…" : "Vincular tenant existente"}
+              </Button>
+            </section>
+          )}
 
         <section className="cartao">
           <h2>Licenças por unidade</h2>

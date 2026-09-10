@@ -15,8 +15,35 @@ import { TrocarPlanoAssinaturaService } from "./TrocarPlanoAssinaturaService";
 import { GerenciarContatoService } from "./GerenciarContatoService";
 import { CriarContatoAssinanteService } from "./CriarContatoAssinanteService";
 import { AtualizarAssinanteService } from "./AtualizarAssinanteService";
+import { VincularTenantCompartilhadoService } from "./VincularTenantCompartilhadoService";
 
 export const assinantesRoutes = Router();
+
+const vinculoTenantCompartilhadoSchema = z.object({
+  tenantKey: z.string().uuid(),
+  schemaVersao: z.string().trim().min(1).max(100),
+}).strict();
+
+assinantesRoutes.post(
+  "/:assinanteId/tenant-compartilhado",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = vinculoTenantCompartilhadoSchema.safeParse(request.body);
+    if (!assinanteId.success || !dados.success) return response.status(400).json({ mensagem: "Vínculo de tenant inválido." });
+    try {
+      return response.status(201).json(await new VincularTenantCompartilhadoService(prisma).execute(
+        assinanteId.data, dados.data.tenantKey, dados.data.schemaVersao, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "ASSINANTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Assinante não encontrado." });
+      if (erro instanceof Error && ["ASSINANTE_NAO_ELEGIVEL", "TENANT_KEY_JA_VINCULADO"].includes(erro.message)) {
+        return response.status(409).json({ mensagem: erro.message === "TENANT_KEY_JA_VINCULADO" ? "Tenant key já vinculada." : "Assinante não elegível para vínculo." });
+      }
+      throw erro;
+    }
+  },
+);
 
 const idsContatoSchema = z.object({
   assinanteId: z.string().uuid(),

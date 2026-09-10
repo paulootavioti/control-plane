@@ -70,6 +70,18 @@ Ao finalizar, ambiente e assinante tornam-se ativos na mesma transação.
 
 ## 6. Diretório e concessão
 
+Para um produto que já opera em banco compartilhado, vincule primeiro a
+`tenantKey` existente pela tela do assinante. Esse vínculo cria um ambiente
+`COMPARTILHADO` pendente, sem criar projeto ou banco. A contratação ativa o
+ambiente e o registro no diretório na mesma transação, com um evento de
+provisionamento já concluído para manter a trilha operacional.
+
+Em testes sem domínio próprio, configure o destino exato da concessão:
+
+```env
+TENANT_PRODUCT_HOST_MAP={"sysbelt:academia-centro":"https://sysbeltfp.netlify.app"}
+```
+
 1. Configure uma credencial independente para cada produto em
    `CONTROL_PLANE_PRODUCT_CREDENTIALS`.
 2. O tenant consulta o caminho multiproduto e respeita os TTLs do contrato.
