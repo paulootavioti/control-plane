@@ -3,7 +3,7 @@ import { ContratarAssinaturaService } from "./ContratarAssinaturaService";
 
 const agora = new Date("2026-08-12T12:00:00.000Z");
 const auditoria = { operadorId: "op1", origem: "OPERADOR" as const, ip: null, userAgent: null };
-function banco(opcoes: { assinante?: unknown; corrente?: unknown; plano?: unknown } = {}) {
+function banco(opcoes: { assinante?: unknown; corrente?: unknown; plano?: unknown; ambiente?: unknown } = {}) {
   const tx = {
     assinante: { findUnique: vi.fn().mockResolvedValue(opcoes.assinante ?? { status: "PROSPECT", produtoCodigo: "sysbelt" }), update: vi.fn() },
     assinatura: {
@@ -13,7 +13,9 @@ function banco(opcoes: { assinante?: unknown; corrente?: unknown; plano?: unknow
     planoVersao: { findUnique: vi.fn().mockResolvedValue(opcoes.plano ?? {
       id: "p1", vigenteDesde: new Date("2026-08-01"), vigenteAte: null, plano: { ativo: true, produtoCodigo: "sysbelt" },
     }) },
-    ambienteTenant: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({ id: "amb1", regiao: "aws-sa-east-1", schemaVersaoDesejada: "latest", eventos: [{ id: "ev1" }] }) },
+    ambienteTenant: { findUnique: vi.fn().mockResolvedValue(opcoes.ambiente ?? null), update: vi.fn(), create: vi.fn().mockResolvedValue({ id: "amb1", regiao: "aws-sa-east-1", schemaVersaoDesejada: "latest", eventos: [{ id: "ev1" }] }) },
+    eventoProvisionamento: { create: vi.fn().mockResolvedValue({ id: "ev-compartilhado" }) },
+    tenantProduto: { update: vi.fn() },
     auditLogPlataforma: { create: vi.fn() },
   };
   return { tx, db: { $transaction: vi.fn(async (operacao) => operacao(tx)) } };
@@ -28,6 +30,20 @@ describe("contratação de assinatura", () => {
     expect(tx.assinatura.create).toHaveBeenCalledOnce();
     expect(tx.ambienteTenant.create).toHaveBeenCalledOnce();
     expect(tx.assinante.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "EM_PROVISIONAMENTO" } }));
+  });
+
+  it("ativa tenant compartilhado sem criar banco novo", async () => {
+    const { tx, db } = banco({ ambiente: {
+      id: "amb-existente", tenantKey: "6af23aa7-bd57-4428-aeae-3a237025bb68", provider: "COMPARTILHADO",
+      assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" }, eventos: [],
+    } });
+    const resultado = await new ContratarAssinaturaService(db as never).execute("a1", {
+      planoVersaoId: "p1", status: "ATIVA", diaVencimento: 10,
+    }, auditoria, agora);
+    expect(tx.ambienteTenant.create).not.toHaveBeenCalled();
+    expect(tx.ambienteTenant.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "ATIVO" } }));
+    expect(tx.tenantProduto.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "ATIVO" } }));
+    expect(resultado.provisionamento.eventoId).toBe("ev-compartilhado");
   });
 
   it("recusa segunda assinatura corrente", async () => {

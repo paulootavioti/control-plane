@@ -17,12 +17,35 @@ export async function enfileirarProvisionamento(
   const chaveIdempotencia = `criar-ambiente:${dados.assinanteId}:v1`;
   const existente = await tx.ambienteTenant.findUnique({
     where: { assinanteId: dados.assinanteId },
-    include: { eventos: { where: { chaveIdempotencia }, take: 1, select: { id: true } } },
+    include: {
+      assinante: { select: { slug: true, produtoCodigo: true } },
+      eventos: { where: { chaveIdempotencia }, take: 1, select: { id: true } },
+    },
   });
   if (existente?.eventos[0]) return {
     ambienteId: existente.id, tenantKey: existente.tenantKey,
     eventoId: existente.eventos[0].id, duplicado: true,
   };
+
+  if (existente?.provider === "COMPARTILHADO") {
+    const agora = new Date();
+    const evento = await tx.eventoProvisionamento.create({ data: {
+      ambienteTenantId: existente.id,
+      tipo: "CRIAR_AMBIENTE",
+      chaveIdempotencia,
+      status: "CONCLUIDO",
+      etapaAtual: "HEALTH_CHECK_VALIDADO",
+      iniciadoEm: agora,
+      concluidoEm: agora,
+    } });
+    await tx.ambienteTenant.update({ where: { id: existente.id }, data: { status: "ATIVO" } });
+    await tx.tenantProduto.update({
+      where: { produtoCodigo_assinanteId: { produtoCodigo: existente.assinante.produtoCodigo, assinanteId: dados.assinanteId } },
+      data: { status: "ATIVO" },
+    });
+    await tx.assinante.update({ where: { id: dados.assinanteId }, data: { status: "ATIVO" } });
+    return { ambienteId: existente.id, tenantKey: existente.tenantKey, eventoId: evento.id, duplicado: false };
+  }
 
   const ambiente = await tx.ambienteTenant.create({ data: {
     assinanteId: dados.assinanteId,
