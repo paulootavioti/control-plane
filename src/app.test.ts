@@ -5,7 +5,7 @@ import { app } from "./app";
 
 describe("GET /health", () => {
   it("confia no proxy da hospedagem para identificar o IP original", () => {
-    expect(app.get("trust proxy")).toBe(true);
+    expect(app.get("trust proxy")).toBe(1);
   });
 
   it("identifica o serviço independente do Control Plane", async () => {
