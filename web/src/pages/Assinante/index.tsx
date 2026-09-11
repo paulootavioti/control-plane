@@ -233,6 +233,41 @@ export function Assinante() {
   const [tenantKeyExistente, setTenantKeyExistente] = useState("");
   const [schemaTenantExistente, setSchemaTenantExistente] = useState("3.0.2026.09.01");
   const [vinculandoTenant, setVinculandoTenant] = useState(false);
+  const [editandoCadastro, setEditandoCadastro] = useState(false);
+  const [salvandoCadastro, setSalvandoCadastro] = useState(false);
+  const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
+
+  function iniciarEdicaoCadastro() {
+    if (!assinante) return;
+    setCadastro({
+      nomeFantasia: assinante.nomeFantasia,
+      razaoSocial: assinante.razaoSocial ?? "",
+      documento: assinante.documento,
+      slug: assinante.slug,
+      emailCobranca: assinante.emailCobranca,
+      telefone: assinante.telefone ?? "",
+    });
+    setEditandoCadastro(true);
+  }
+
+  async function salvarCadastro() {
+    if (!assinante) return;
+    setSalvandoCadastro(true);
+    try {
+      await api.patch(`/assinantes/${assinante.id}`, {
+        nomeFantasia: cadastro.nomeFantasia,
+        razaoSocial: cadastro.razaoSocial || null,
+        documento: cadastro.documento,
+        slug: cadastro.slug,
+        emailCobranca: cadastro.emailCobranca,
+        telefone: cadastro.telefone || null,
+      });
+      setEditandoCadastro(false);
+      setMensagemAcao("Cadastro do assinante atualizado.");
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível atualizar o assinante.")); }
+    finally { setSalvandoCadastro(false); }
+  }
 
   async function vincularTenantCompartilhado() {
     if (!assinante) return;
@@ -305,7 +340,17 @@ export function Assinante() {
       <div className="grade-larga">
         <section className="cartao">
           <h2>Cadastro</h2>
-          <dl className="attribute-grid">
+          {editandoCadastro ? (
+            <div className="form-grid">
+              <Field id="assinante-nome" label="Nome fantasia"><Input id="assinante-nome" value={cadastro.nomeFantasia} onChange={(e) => setCadastro({ ...cadastro, nomeFantasia: e.target.value })} /></Field>
+              <Field id="assinante-razao" label="Razão social"><Input id="assinante-razao" value={cadastro.razaoSocial} onChange={(e) => setCadastro({ ...cadastro, razaoSocial: e.target.value })} /></Field>
+              <Field id="assinante-documento" label="Documento"><Input id="assinante-documento" value={cadastro.documento} onChange={(e) => setCadastro({ ...cadastro, documento: e.target.value })} /></Field>
+              <Field id="assinante-slug" label="Slug"><Input id="assinante-slug" value={cadastro.slug} onChange={(e) => setCadastro({ ...cadastro, slug: e.target.value })} /></Field>
+              <Field id="assinante-email" label="E-mail de cobrança"><Input id="assinante-email" type="email" value={cadastro.emailCobranca} onChange={(e) => setCadastro({ ...cadastro, emailCobranca: e.target.value })} /></Field>
+              <Field id="assinante-telefone" label="Telefone"><Input id="assinante-telefone" value={cadastro.telefone} onChange={(e) => setCadastro({ ...cadastro, telefone: e.target.value })} /></Field>
+              <div><Button variant="secondary" disabled={salvandoCadastro} onClick={() => setEditandoCadastro(false)}>Cancelar</Button> <Button disabled={salvandoCadastro} onClick={salvarCadastro}>{salvandoCadastro ? "Salvando…" : "Salvar cadastro"}</Button></div>
+            </div>
+          ) : <><dl className="attribute-grid">
             <Atributo rotulo="Produto">{assinante.produto.nome}</Atributo>
             <Atributo rotulo="Razão social">{assinante.razaoSocial ?? "—"}</Atributo>
             <Atributo rotulo="Documento">{assinante.documento}</Atributo>
@@ -313,7 +358,7 @@ export function Assinante() {
             <Atributo rotulo="E-mail de cobrança">{assinante.emailCobranca}</Atributo>
             <Atributo rotulo="Telefone">{assinante.telefone ?? "—"}</Atributo>
             <Atributo rotulo="Cadastrado em">{formatarData(assinante.criadoEm)}</Atributo>
-          </dl>
+          </dl>{podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && <Button variant="secondary" onClick={iniciarEdicaoCadastro}>Editar cadastro</Button>}</>}
         </section>
 
         {assinante.assinatura ? (
