@@ -53,9 +53,10 @@ export class EnviarConcessaoService {
   async execute(ambienteId: string) {
     const ambiente = await this.db.ambienteTenant.findUnique({
       where: { id: ambienteId },
-      select: { assinante: { select: { slug: true, produtoCodigo: true } } },
+      select: { status: true, assinante: { select: { slug: true, produtoCodigo: true } } },
     });
     if (!ambiente) throw new Error("AMBIENTE_NAO_ENCONTRADO");
+    if (ambiente.status !== "ATIVO") throw new Error("AMBIENTE_NAO_ELEGIVEL");
 
     const slug = validarSlug(ambiente.assinante.slug);
     const concessao = await this.gerador.execute(ambienteId);

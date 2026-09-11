@@ -373,7 +373,11 @@ export function Assinante() {
         )}
 
         {assinante.ambiente ? (
-          <><BlocoAmbiente ambiente={assinante.ambiente} />{podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && <Button variant="secondary" onClick={enviarConcessao}>Reenviar concessão</Button>}</>
+          <><BlocoAmbiente ambiente={assinante.ambiente} />{podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && (
+            assinante.ambiente.status === "ATIVO" && assinante.assinatura
+              ? <Button variant="secondary" onClick={enviarConcessao}>Reenviar concessão</Button>
+              : <p className="vazio">A concessão ficará disponível quando a assinatura e o ambiente estiverem ativos.</p>
+          )}</>
         ) : (
           <section className="cartao">
             <h2>Ambiente</h2>
