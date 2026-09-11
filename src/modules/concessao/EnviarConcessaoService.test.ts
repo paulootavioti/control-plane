@@ -19,9 +19,19 @@ afterEach(() => {
 });
 
 describe("entrega de concessão", () => {
+  it("recusa ambiente pendente antes de gerar ou enviar a concessão", async () => {
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "PENDENTE", assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
+    const requisicao = vi.fn();
+    const gerador = { execute: vi.fn() };
+    await expect(new EnviarConcessaoService(db as never, requisicao, gerador).execute("ambiente-1"))
+      .rejects.toThrow("AMBIENTE_NAO_ELEGIVEL");
+    expect(gerador.execute).not.toHaveBeenCalled();
+    expect(requisicao).not.toHaveBeenCalled();
+  });
+
   it("envia ao hostname derivado do slug e confirma a revisão persistida", async () => {
     process.env.TENANT_APP_BASE_DOMAIN = "app.sysbelt.com.br";
-    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
     const requisicao = vi.fn().mockResolvedValue(new Response(JSON.stringify({ revisao: 7, duplicada: false }), {
       status: 201, headers: { "content-type": "application/json" },
     }));
@@ -42,7 +52,7 @@ describe("entrega de concessão", () => {
 
   it("envia ao host gratuito explicitamente mapeado", async () => {
     process.env.TENANT_PRODUCT_HOST_MAP = JSON.stringify({ "sysbelt:academia-centro": "https://sysbeltfp.netlify.app" });
-    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
     const requisicao = vi.fn().mockResolvedValue(new Response(JSON.stringify({ revisao: 7, duplicada: false }), { status: 201 }));
     const gerador = { execute: vi.fn().mockResolvedValue(concessao) };
     await new EnviarConcessaoService(db as never, requisicao, gerador).execute("ambiente-1");
@@ -54,7 +64,7 @@ describe("entrega de concessão", () => {
 
   it("não emite quando o slug poderia alterar o destino", async () => {
     process.env.TENANT_APP_BASE_DOMAIN = "app.sysbelt.com.br";
-    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ assinante: { slug: "x.example.com", produtoCodigo: "sysbelt" } }) } };
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "x.example.com", produtoCodigo: "sysbelt" } }) } };
     const requisicao = vi.fn();
     const gerador = { execute: vi.fn() };
     await expect(new EnviarConcessaoService(db as never, requisicao, gerador).execute("a1"))
@@ -65,7 +75,7 @@ describe("entrega de concessão", () => {
 
   it("marca falha de rede como entrega incerta", async () => {
     process.env.TENANT_APP_BASE_DOMAIN = "app.sysbelt.com.br";
-    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ assinante: { slug: "academia", produtoCodigo: "sysbelt" } }) } };
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "academia", produtoCodigo: "sysbelt" } }) } };
     const requisicao = vi.fn().mockRejectedValue(new Error("timeout"));
     const gerador = { execute: vi.fn().mockResolvedValue(concessao) };
     await expect(new EnviarConcessaoService(db as never, requisicao, gerador).execute("a1"))
@@ -74,7 +84,7 @@ describe("entrega de concessão", () => {
 
   it("não confirma a entrega quando a resposta não comprova a revisão", async () => {
     process.env.TENANT_APP_BASE_DOMAIN = "app.sysbelt.com.br";
-    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ assinante: { slug: "academia", produtoCodigo: "sysbelt" } }) } };
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "academia", produtoCodigo: "sysbelt" } }) } };
     const requisicao = vi.fn().mockResolvedValue(new Response("resposta-invalida", { status: 200 }));
     const gerador = { execute: vi.fn().mockResolvedValue(concessao) };
     await expect(new EnviarConcessaoService(db as never, requisicao, gerador).execute("a1"))

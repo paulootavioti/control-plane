@@ -21,6 +21,9 @@ concessaoRoutes.post(
       if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") {
         return response.status(404).json({ mensagem: "Ambiente não encontrado." });
       }
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ELEGIVEL") {
+        return response.status(409).json({ mensagem: "A concessão só pode ser enviada para um ambiente ativo." });
+      }
       if (erro instanceof Error && erro.message === "ENTREGA_CONCESSAO_INCERTA") {
         return response.status(504).json({
           mensagem: "O tenant não confirmou a concessão; o resultado da entrega é incerto.",
