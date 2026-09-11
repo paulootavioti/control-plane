@@ -4,12 +4,13 @@ import { rateLimit } from "express-rate-limit";
 import { prisma } from "../../shared/prisma";
 import { conferirSenha, emitirToken, loginSchema } from "./regrasAuth";
 import { autenticarOperador, segredoJwt } from "./autenticarOperador";
+import { chaveRateLimit } from "./chaveRateLimit";
 
 export const authRoutes = Router();
 
 authRoutes.post(
   "/login",
-  rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false }),
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false, keyGenerator: chaveRateLimit }),
   async (request, response) => {
     const validacao = loginSchema.safeParse(request.body);
     if (!validacao.success) {

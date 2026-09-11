@@ -22,7 +22,7 @@ import { solicitacoesRoutes } from "./modules/solicitacoes/routes";
 
 export const app = express();
 
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(restringirCors);
 app.use(cors({
