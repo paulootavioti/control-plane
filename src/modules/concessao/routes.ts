@@ -24,6 +24,18 @@ concessaoRoutes.post(
       if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ELEGIVEL") {
         return response.status(409).json({ mensagem: "A concessão só pode ser enviada para um ambiente ativo." });
       }
+      if (erro instanceof Error && erro.message === "CONCESSAO_CHAVE_PRIVADA_AUSENTE") {
+        return response.status(503).json({ mensagem: "A chave privada de concessão não está configurada no Control Plane." });
+      }
+      if (erro instanceof Error && erro.message === "CONCESSAO_CHAVE_PRIVADA_INVALIDA") {
+        return response.status(503).json({ mensagem: "A chave privada de concessão configurada no Control Plane é inválida." });
+      }
+      if (erro instanceof Error && erro.message === "CONCESSAO_MAPA_DESTINO_INVALIDO") {
+        return response.status(503).json({ mensagem: "O mapa de destino dos tenants está inválido no Control Plane." });
+      }
+      if (erro instanceof Error && erro.message === "TENANT_APP_BASE_DOMAIN não configurado corretamente.") {
+        return response.status(503).json({ mensagem: "Nenhum destino válido foi configurado para o tenant." });
+      }
       if (erro instanceof Error && erro.message === "ENTREGA_CONCESSAO_INCERTA") {
         return response.status(504).json({
           mensagem: "O tenant não confirmou a concessão; o resultado da entrega é incerto.",
