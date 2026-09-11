@@ -5,7 +5,7 @@ import { assinarConcessao, extrairRecursos, statusAcesso } from "./concessaoCont
 function chavePrivada(): string {
   const valor = process.env.CONTROL_PLANE_GRANT_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
   if (!valor?.includes("-----BEGIN PRIVATE KEY-----")) {
-    throw new Error("CONTROL_PLANE_GRANT_PRIVATE_KEY não configurada.");
+    throw new Error("CONCESSAO_CHAVE_PRIVADA_AUSENTE");
   }
   return valor;
 }
@@ -27,7 +27,7 @@ export class GerarConcessaoService {
       if (!assinatura) throw new Error("Assinante não possui assinatura corrente.");
 
       const expiraEm = new Date(agora.getTime() + 24 * 60 * 60 * 1000);
-      return assinarConcessao({
+      const payload = {
         versao: 1,
         tenantKey: ambiente.tenantKey,
         revisao: ambiente.revisaoConcessao,
@@ -35,7 +35,12 @@ export class GerarConcessaoService {
         recursos: extrairRecursos(assinatura.planoVersao.recursos),
         emitidaEm: agora.toISOString(),
         expiraEm: expiraEm.toISOString(),
-      }, chavePrivada());
+      } as const;
+      try { return assinarConcessao(payload, chavePrivada()); }
+      catch (erro) {
+        if (erro instanceof Error && erro.message === "CONCESSAO_CHAVE_PRIVADA_AUSENTE") throw erro;
+        throw new Error("CONCESSAO_CHAVE_PRIVADA_INVALIDA");
+      }
     });
   }
 }

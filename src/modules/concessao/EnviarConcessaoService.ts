@@ -26,12 +26,12 @@ function destinoTenant(produto: string, slug: string): string {
   if (bruto) {
     let mapa: Record<string, string>;
     try { mapa = JSON.parse(bruto) as Record<string, string>; }
-    catch { throw new Error("TENANT_PRODUCT_HOST_MAP inválido."); }
+    catch { throw new Error("CONCESSAO_MAPA_DESTINO_INVALIDO"); }
     const configurado = mapa[`${produto}:${slug}`];
     if (configurado) {
       const url = new URL(configurado);
       if (url.protocol !== "https:" || url.pathname !== "/" || url.search || url.hash) {
-        throw new Error("TENANT_PRODUCT_HOST_MAP inválido.");
+        throw new Error("CONCESSAO_MAPA_DESTINO_INVALIDO");
       }
       return url.origin;
     }
