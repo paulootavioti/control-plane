@@ -9,6 +9,7 @@ function banco(status = "ATIVA", ambiente: { id: string; status: string } | null
       update: vi.fn(),
     },
     ambienteTenant: { findUnique: vi.fn().mockResolvedValue(ambiente), update: vi.fn() },
+    tenantProduto: { updateMany: vi.fn() },
     assinante: { update: vi.fn() },
     auditLogPlataforma: { create: vi.fn() },
   };
@@ -22,6 +23,10 @@ describe("transições da assinatura", () => {
       .execute("a1", "s1", "SUSPENSA", auditoria);
     expect(tx.assinante.update).toHaveBeenCalledWith({ where: { id: "a1" }, data: { status: "SUSPENSO" } });
     expect(tx.ambienteTenant.update).toHaveBeenCalledWith({ where: { id: "amb1" }, data: { status: "SUSPENSO" } });
+    expect(tx.tenantProduto.updateMany).toHaveBeenCalledWith({
+      where: { assinanteId: "a1", status: { not: "CANCELADO" } },
+      data: { status: "SUSPENSO_OPERACIONAL" },
+    });
     expect(resultado.exigeEnvioConcessao).toBe(true);
   });
 
@@ -30,6 +35,10 @@ describe("transições da assinatura", () => {
     const resultado = await new AlterarStatusAssinaturaService(db as never)
       .execute("a1", "s1", "ATIVA", auditoria);
     expect(tx.ambienteTenant.update).toHaveBeenCalledWith({ where: { id: "amb1" }, data: { status: "ATIVO" } });
+    expect(tx.tenantProduto.updateMany).toHaveBeenCalledWith({
+      where: { assinanteId: "a1", status: { in: ["SUSPENSO_FINANCEIRO", "SUSPENSO_OPERACIONAL"] } },
+      data: { status: "ATIVO" },
+    });
     expect(resultado.ambienteId).toBe("amb1");
   });
 
