@@ -2,7 +2,7 @@
 
 ## Responsabilidade
 
-O Control Plane é o sistema B2B compartilhado por SysBelt, Mecanix e Psyché.
+O Control Plane é um produto da Tools — Soluções & Tecnologia para gestão B2B compartilhada de SysBelt FP, Mecanix e Psyché.
 Ele mantém a verdade comercial e operacional da plataforma: produtos, planos,
 assinantes, assinaturas, faturas, diretório de tenants, concessões, inventário
 de ambientes, auditoria e filas de integração.
