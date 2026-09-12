@@ -2,7 +2,7 @@
   "name": "@sysbelt/control-plane",
   "version": "0.1.0",
   "private": true,
-  "description": "Control Plane B2B do SysBelt",
+  "description": "Control Plane multiproduto da Tools — Soluções & Tecnologia",
   "engines": {
     "node": ">=20"
   },

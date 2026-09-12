@@ -38,11 +38,10 @@ export function Login() {
 
   return (
     <main className="login-page">
-      <section className="login-identity" aria-label="Sys Belt Control Plane">
-        <strong className="login-brand">SYS BELT</strong>
-        <div className="belt-mark" aria-hidden="true"><span /><span /><span /></div>
+      <section className="login-identity" aria-label="Tools Control Plane">
+        <img className="login-logo" src="/tools-logo.png" alt="Tools — Soluções & Tecnologia" />
         <span className="login-product">CONTROL PLANE</span>
-        <p className="login-note">Ferramenta interna de operação da plataforma. Acesso restrito à equipe Sys Belt.</p>
+        <p className="login-note">Plataforma interna da Tools para gestão de assinaturas, produtos e ambientes. Acesso restrito à equipe autorizada.</p>
       </section>
       <section className="login-form-wrap">
       <form className="login-form" onSubmit={aoEnviar}>

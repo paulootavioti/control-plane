@@ -17,7 +17,7 @@ export function Layout() {
     <div className="app">
       <header className="topo">
         <div className="marca">
-          <strong>SYS BELT</strong><small>CONTROL PLANE</small>
+          <strong>TOOLS</strong><small>CONTROL PLANE</small>
         </div>
 
         <nav className="menu">
