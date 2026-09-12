@@ -56,7 +56,7 @@ export class EnviarConcessaoService {
       select: { status: true, assinante: { select: { slug: true, produtoCodigo: true } } },
     });
     if (!ambiente) throw new Error("AMBIENTE_NAO_ENCONTRADO");
-    if (ambiente.status !== "ATIVO") throw new Error("AMBIENTE_NAO_ELEGIVEL");
+    if (!["ATIVO", "SUSPENSO"].includes(ambiente.status)) throw new Error("AMBIENTE_NAO_ELEGIVEL");
 
     const slug = validarSlug(ambiente.assinante.slug);
     const concessao = await this.gerador.execute(ambienteId);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { Button, EmptyState, ErrorMessage, Field, Input, PageHeader, Skeleton, StatusBadge, Table, Toast } from "../../components/ui";
+import { Button, ConfirmDialog, EmptyState, ErrorMessage, Field, Input, PageHeader, Skeleton, StatusBadge, Table, Toast } from "../../components/ui";
 import { api } from "../../services/api";
 import { formatarCentavos, formatarData, rotularStatus } from "../../utils/formatar";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
@@ -103,7 +103,7 @@ function Atributo({ rotulo, children }: { rotulo: string; children: React.ReactN
   );
 }
 
-function BlocoAssinatura({ assinatura }: { assinatura: Assinatura }) {
+function BlocoAssinatura({ assinatura, acoes }: { assinatura: Assinatura; acoes?: React.ReactNode }) {
   const valores = valoresVigentes(assinatura);
   const { planoVersao } = assinatura;
 
@@ -144,6 +144,7 @@ function BlocoAssinatura({ assinatura }: { assinatura: Assinatura }) {
           {marca(valores.blocosMinimosPorUnidade, planoVersao.blocosMinimosPorUnidade, String)}
         </Atributo>
       </dl>
+      {acoes}
     </section>
   );
 }
@@ -235,6 +236,8 @@ export function Assinante() {
   const [vinculandoTenant, setVinculandoTenant] = useState(false);
   const [editandoCadastro, setEditandoCadastro] = useState(false);
   const [salvandoCadastro, setSalvandoCadastro] = useState(false);
+  const [novoStatus, setNovoStatus] = useState<"SUSPENSA" | "ATIVA" | null>(null);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
 
   function iniciarEdicaoCadastro() {
@@ -289,6 +292,34 @@ export function Assinante() {
       setMensagemAcao(`Concessão revisão ${resposta.data.revisao} enviada; expira em ${formatarData(resposta.data.expiraEm)}.`);
       setRecarga((valor) => valor + 1);
     } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível enviar a concessão.")); }
+  }
+
+  async function alterarStatusAssinatura() {
+    if (!assinante?.assinatura || !novoStatus) return;
+    setAlterandoStatus(true);
+    setErro("");
+    let statusAlterado = false;
+    try {
+      const resposta = await api.patch<{ ambienteId: string | null }>(
+        `/assinantes/${assinante.id}/assinaturas/${assinante.assinatura.id}/status`,
+        { status: novoStatus },
+      );
+      statusAlterado = true;
+      if (resposta.data.ambienteId) {
+        await api.post(`/concessoes/${resposta.data.ambienteId}/enviar`);
+      }
+      setMensagemAcao(novoStatus === "SUSPENSA"
+        ? "Assinatura suspensa e concessão de bloqueio enviada."
+        : "Assinatura reativada e nova concessão enviada.");
+    } catch (erroDaAcao) {
+      setErro(statusAlterado
+        ? `O status foi alterado, mas a concessão não foi entregue: ${getApiErrorMessage(erroDaAcao, "falha na entrega")}`
+        : getApiErrorMessage(erroDaAcao, "Não foi possível alterar a assinatura."));
+    } finally {
+      setNovoStatus(null);
+      setAlterandoStatus(false);
+      setRecarga((valor) => valor + 1);
+    }
   }
 
   async function retomar(eventoId: string) {
@@ -362,7 +393,12 @@ export function Assinante() {
         </section>
 
         {assinante.assinatura ? (
-          <BlocoAssinatura assinatura={assinante.assinatura} />
+          <BlocoAssinatura assinatura={assinante.assinatura} acoes={podeVer(["OPERADOR", "ADMIN_PLATAFORMA"]) && <>
+            {["TESTE", "ATIVA", "INADIMPLENTE"].includes(assinante.assinatura.status) &&
+              <Button className="button-danger" onClick={() => setNovoStatus("SUSPENSA")}>Suspender assinatura</Button>}
+            {assinante.assinatura.status === "SUSPENSA" &&
+              <Button onClick={() => setNovoStatus("ATIVA")}>Reativar assinatura</Button>}
+          </>} />
         ) : (
           <section className="cartao">
             <h2>Assinatura vigente</h2>
@@ -457,6 +493,18 @@ export function Assinante() {
               aoContratar={() => setRecarga((atual) => atual + 1)}
             />
           )}
+
+        <ConfirmDialog
+          open={novoStatus !== null}
+          title={novoStatus === "SUSPENSA" ? "Suspender assinatura" : "Reativar assinatura"}
+          description={novoStatus === "SUSPENSA"
+            ? "O acesso administrativo do tenant será bloqueado. Uma concessão de suspensão será enviada ao produto."
+            : "O acesso administrativo será liberado novamente e uma nova concessão será enviada ao produto."}
+          confirmation={novoStatus === "SUSPENSA" ? "SUSPENDER" : "REATIVAR"}
+          busy={alterandoStatus}
+          onCancel={() => setNovoStatus(null)}
+          onConfirm={() => void alterarStatusAssinatura()}
+        />
 
         <section className="cartao cartao-largo">
           <h2>Faturas — últimas 12</h2>

@@ -32,13 +32,22 @@ export class AlterarStatusAssinaturaService {
 
       if (destino === "SUSPENSA") {
         await tx.assinante.update({ where: { id: assinanteId }, data: { status: "SUSPENSO" } });
+        await tx.tenantProduto.updateMany({
+          where: { assinanteId, status: { not: "CANCELADO" } },
+          data: { status: "SUSPENSO_OPERACIONAL" },
+        });
         if (ambiente && ambiente.status !== "DESATIVADO") {
           await tx.ambienteTenant.update({ where: { id: ambiente.id }, data: { status: "SUSPENSO" } });
         }
       } else if (destino === "CANCELADA") {
         await tx.assinante.update({ where: { id: assinanteId }, data: { status: "CANCELADO" } });
+        await tx.tenantProduto.updateMany({ where: { assinanteId }, data: { status: "CANCELADO" } });
       } else if (destino === "ATIVA" && ambiente && ["ATIVO", "SUSPENSO"].includes(ambiente.status)) {
         await tx.assinante.update({ where: { id: assinanteId }, data: { status: "ATIVO" } });
+        await tx.tenantProduto.updateMany({
+          where: { assinanteId, status: { in: ["SUSPENSO_FINANCEIRO", "SUSPENSO_OPERACIONAL"] } },
+          data: { status: "ATIVO" },
+        });
         if (ambiente.status === "SUSPENSO") {
           await tx.ambienteTenant.update({ where: { id: ambiente.id }, data: { status: "ATIVO" } });
         }

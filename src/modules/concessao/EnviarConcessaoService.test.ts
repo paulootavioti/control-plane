@@ -50,6 +50,15 @@ describe("entrega de concessão", () => {
     });
   });
 
+  it("envia concessão de bloqueio para ambiente suspenso", async () => {
+    process.env.TENANT_APP_BASE_DOMAIN = "app.sysbelt.com.br";
+    const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "SUSPENSO", assinante: { slug: "academia", produtoCodigo: "sysbelt" } }) } };
+    const requisicao = vi.fn().mockResolvedValue(new Response(JSON.stringify({ revisao: 7, duplicada: false }), { status: 201 }));
+    const gerador = { execute: vi.fn().mockResolvedValue({ ...concessao, statusAcesso: "SUSPENSO" }) };
+    await expect(new EnviarConcessaoService(db as never, requisicao, gerador).execute("ambiente-1"))
+      .resolves.toMatchObject({ revisao: 7 });
+  });
+
   it("envia ao host gratuito explicitamente mapeado", async () => {
     process.env.TENANT_PRODUCT_HOST_MAP = JSON.stringify({ "sysbelt:academia-centro": "https://sysbeltfp.netlify.app" });
     const db = { ambienteTenant: { findUnique: vi.fn().mockResolvedValue({ status: "ATIVO", assinante: { slug: "academia-centro", produtoCodigo: "sysbelt" } }) } };
