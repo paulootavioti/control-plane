@@ -41,15 +41,16 @@ export class ReceberSnapshotContagem {
           eventoExternoId: payload.eventoId,
           versaoContrato: payload.versao,
           dataCorte: new Date(payload.dataCorte),
-          itens: {
-            create: payload.unidades.map((unidade) => ({
-              assinanteId,
-              licencaUnidadeId: licencaPorUnidade.get(unidade.unidadeId)!,
-              alunosAtivos: unidade.alunosAtivos,
-            })),
-          },
         },
         select: { id: true },
+      });
+      await tx.snapshotContagemItem.createMany({
+        data: payload.unidades.map((unidade) => ({
+          snapshotId: snapshot.id,
+          assinanteId,
+          licencaUnidadeId: licencaPorUnidade.get(unidade.unidadeId)!,
+          alunosAtivos: unidade.alunosAtivos,
+        })),
       });
       return { id: snapshot.id, duplicado: false };
       });
