@@ -17,6 +17,7 @@ a { color: var(--color-accent-text); }
 .button-danger { background: var(--color-danger-bg); border-color: var(--color-danger); color: var(--color-danger); }
 .input { width: 100%; min-height: var(--tap-target-min); padding: var(--space-2) var(--space-3); border: var(--rule-hair) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background); color: var(--color-text); font-size: var(--font-md); }
 .input:hover { border-color: var(--color-text-light); } .input:focus { border-color: var(--color-accent); }
+.chave-publica { min-height: 150px; resize: vertical; font-family: monospace; }
 .field { display: grid; gap: var(--space-1); min-width: 0; align-content: start; } .field-wide { grid-column: 1 / -1; }
 .field label { color: var(--color-text-light); font-size: var(--font-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .field-help, .field-error { font-size: var(--font-xs); } .field-help { color: var(--color-text-light); } .field-error { color: var(--color-danger); }
