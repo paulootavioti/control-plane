@@ -75,6 +75,10 @@ interface Fatura {
   totalItens: number;
 }
 
+interface DetalheFatura extends Fatura {
+  itens: Array<{ id: string; nomeUnidade: string; alunosAtivos: number; alunosPorBloco: number; blocosCobrados: number; precoPorBlocoCentavos: number; valorCentavos: number }>;
+}
+
 interface DetalheAssinante {
   id: string;
   nomeFantasia: string;
@@ -242,6 +246,9 @@ export function Assinante() {
   const [salvandoChaveSnapshot, setSalvandoChaveSnapshot] = useState(false);
   const [competenciaFatura, setCompetenciaFatura] = useState("");
   const [gerandoFatura, setGerandoFatura] = useState(false);
+  const [faturaEmRevisao, setFaturaEmRevisao] = useState<DetalheFatura | null>(null);
+  const [emitindoFatura, setEmitindoFatura] = useState(false);
+  const [confirmarEmissao, setConfirmarEmissao] = useState(false);
   const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
 
   function iniciarEdicaoCadastro() {
@@ -320,6 +327,27 @@ export function Assinante() {
     } catch (erroDaAcao) {
       setErro(getApiErrorMessage(erroDaAcao, "Não foi possível gerar a fatura."));
     } finally { setGerandoFatura(false); }
+  }
+
+  async function revisarFatura(faturaId: string) {
+    try {
+      const resposta = await api.get<DetalheFatura>(`/faturas/${faturaId}`);
+      setFaturaEmRevisao(resposta.data);
+      setErro("");
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível carregar a fatura.")); }
+  }
+
+  async function emitirFatura() {
+    if (!faturaEmRevisao) return;
+    setEmitindoFatura(true);
+    try {
+      await api.post(`/faturas/${faturaEmRevisao.id}/emitir`);
+      setConfirmarEmissao(false);
+      setMensagemAcao("Fatura emitida e aberta para pagamento.");
+      await revisarFatura(faturaEmRevisao.id);
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível emitir a fatura.")); }
+    finally { setEmitindoFatura(false); }
   }
 
   async function enviarConcessao() {
@@ -588,6 +616,7 @@ export function Assinante() {
                     <th>Subtotal</th>
                     <th>Total</th>
                     <th>Paga em</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -600,13 +629,34 @@ export function Assinante() {
                       <td>{formatarCentavos(fatura.subtotalCentavos)}</td>
                       <td>{formatarCentavos(fatura.totalCentavos)}</td>
                       <td>{formatarData(fatura.pagaEm)}</td>
+                      <td><Button variant="secondary" onClick={() => void revisarFatura(fatura.id)}>Revisar</Button></td>
                     </tr>
                   ))}
                 </tbody>
             </Table>
           )}
         </section>
+
+        {faturaEmRevisao && (
+          <section className="cartao cartao-largo">
+            <div className="linha-titulo"><h2>Memória de cálculo · {faturaEmRevisao.competencia}</h2><StatusBadge status={faturaEmRevisao.status}>{rotularStatus(faturaEmRevisao.status)}</StatusBadge></div>
+            <Table label="Itens da fatura em revisão">
+              <thead><tr><th>Unidade</th><th>Alunos</th><th>Alunos/faixa</th><th>Faixas</th><th>Preço/faixa</th><th>Valor</th></tr></thead>
+              <tbody>{faturaEmRevisao.itens.map((item) => <tr key={item.id}>
+                <td>{item.nomeUnidade}</td><td>{item.alunosAtivos}</td><td>{item.alunosPorBloco}</td><td>{item.blocosCobrados}</td>
+                <td>{formatarCentavos(item.precoPorBlocoCentavos)}</td><td>{formatarCentavos(item.valorCentavos)}</td>
+              </tr>)}</tbody>
+            </Table>
+            <p className="total"><strong>Total: {formatarCentavos(faturaEmRevisao.totalCentavos)}</strong></p>
+            {faturaEmRevisao.status === "RASCUNHO" && podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) &&
+              <Button onClick={() => setConfirmarEmissao(true)}>Emitir fatura</Button>}
+          </section>
+        )}
       </div>
+      <ConfirmDialog open={confirmarEmissao} title="Emitir fatura"
+        description="Confirme somente após revisar unidades, contagens, faixas e valor total. A fatura passará de Rascunho para Aberta."
+        confirmation="EMITIR" busy={emitindoFatura} onCancel={() => setConfirmarEmissao(false)}
+        onConfirm={() => void emitirFatura()} />
     </>
   );
 }
