@@ -249,6 +249,10 @@ export function Assinante() {
   const [faturaEmRevisao, setFaturaEmRevisao] = useState<DetalheFatura | null>(null);
   const [emitindoFatura, setEmitindoFatura] = useState(false);
   const [confirmarEmissao, setConfirmarEmissao] = useState(false);
+  const [gatewayPagamento, setGatewayPagamento] = useState("");
+  const [referenciaPagamento, setReferenciaPagamento] = useState("");
+  const [confirmarPagamento, setConfirmarPagamento] = useState(false);
+  const [registrandoPagamento, setRegistrandoPagamento] = useState(false);
   const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
 
   function iniciarEdicaoCadastro() {
@@ -348,6 +352,23 @@ export function Assinante() {
       setRecarga((valor) => valor + 1);
     } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível emitir a fatura.")); }
     finally { setEmitindoFatura(false); }
+  }
+
+  async function registrarPagamento() {
+    if (!faturaEmRevisao || !gatewayPagamento.trim() || !referenciaPagamento.trim()) return;
+    setRegistrandoPagamento(true);
+    try {
+      await api.post(`/faturas/${faturaEmRevisao.id}/pagar`, {
+        gateway: gatewayPagamento.trim(), referenciaPagamento: referenciaPagamento.trim(),
+      });
+      setConfirmarPagamento(false);
+      setGatewayPagamento("");
+      setReferenciaPagamento("");
+      setMensagemAcao("Pagamento registrado; fatura marcada como paga.");
+      await revisarFatura(faturaEmRevisao.id);
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível registrar o pagamento.")); }
+    finally { setRegistrandoPagamento(false); }
   }
 
   async function enviarConcessao() {
@@ -650,6 +671,21 @@ export function Assinante() {
             <p className="total"><strong>Total: {formatarCentavos(faturaEmRevisao.totalCentavos)}</strong></p>
             {faturaEmRevisao.status === "RASCUNHO" && podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) &&
               <Button onClick={() => setConfirmarEmissao(true)}>Emitir fatura</Button>}
+            {["ABERTA", "VENCIDA"].includes(faturaEmRevisao.status) && podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) && <>
+              <div className="form-grid">
+                <Field id="gateway-pagamento" label="Origem da confirmação">
+                  <Input id="gateway-pagamento" value={gatewayPagamento} placeholder="Ex.: TRANSFERENCIA"
+                    onChange={(evento) => setGatewayPagamento(evento.target.value.toUpperCase())} />
+                </Field>
+                <Field id="referencia-pagamento" label="Referência externa única">
+                  <Input id="referencia-pagamento" value={referenciaPagamento} placeholder="Identificador do comprovante"
+                    onChange={(evento) => setReferenciaPagamento(evento.target.value)} />
+                </Field>
+              </div>
+              <p className="vazio">Registre somente após confirmar o recebimento por uma evidência externa confiável.</p>
+              <Button disabled={!gatewayPagamento.trim() || !referenciaPagamento.trim()}
+                onClick={() => setConfirmarPagamento(true)}>Registrar pagamento</Button>
+            </>}
           </section>
         )}
       </div>
@@ -657,6 +693,10 @@ export function Assinante() {
         description="Confirme somente após revisar unidades, contagens, faixas e valor total. A fatura passará de Rascunho para Aberta."
         confirmation="EMITIR" busy={emitindoFatura} onCancel={() => setConfirmarEmissao(false)}
         onConfirm={() => void emitirFatura()} />
+      <ConfirmDialog open={confirmarPagamento} title="Registrar pagamento"
+        description="Esta ação afirma que o pagamento foi confirmado externamente e marcará a fatura como Paga."
+        confirmation="PAGAR" busy={registrandoPagamento} onCancel={() => setConfirmarPagamento(false)}
+        onConfirm={() => void registrarPagamento()} />
     </>
   );
 }
