@@ -16,6 +16,7 @@ import { GerenciarContatoService } from "./GerenciarContatoService";
 import { CriarContatoAssinanteService } from "./CriarContatoAssinanteService";
 import { AtualizarAssinanteService } from "./AtualizarAssinanteService";
 import { VincularTenantCompartilhadoService } from "./VincularTenantCompartilhadoService";
+import { ConfigurarChaveSnapshotService } from "./ConfigurarChaveSnapshotService";
 
 export const assinantesRoutes = Router();
 
@@ -40,6 +41,26 @@ assinantesRoutes.post(
       if (erro instanceof Error && ["ASSINANTE_NAO_ELEGIVEL", "TENANT_KEY_JA_VINCULADO"].includes(erro.message)) {
         return response.status(409).json({ mensagem: erro.message === "TENANT_KEY_JA_VINCULADO" ? "Tenant key já vinculada." : "Assinante não elegível para vínculo." });
       }
+      throw erro;
+    }
+  },
+);
+
+assinantesRoutes.put(
+  "/:assinanteId/tenant-compartilhado/chave-snapshot",
+  autenticarOperador(["ADMIN_PLATAFORMA"]),
+  async (request, response) => {
+    const assinanteId = z.string().uuid().safeParse(request.params.assinanteId);
+    const dados = z.object({ chavePublica: z.string().trim().min(1).max(10_000) }).strict().safeParse(request.body);
+    if (!assinanteId.success || !dados.success) return response.status(400).json({ mensagem: "Chave pública inválida." });
+    try {
+      return response.json(await new ConfigurarChaveSnapshotService(prisma).execute(
+        assinanteId.data, dados.data.chavePublica, contextoAuditoria(request, response),
+      ));
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === "CHAVE_PUBLICA_INVALIDA") return response.status(400).json({ mensagem: "A chave deve ser uma chave pública Ed25519 válida." });
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_ENCONTRADO") return response.status(404).json({ mensagem: "Ambiente não encontrado." });
+      if (erro instanceof Error && erro.message === "AMBIENTE_NAO_COMPARTILHADO") return response.status(409).json({ mensagem: "A configuração manual é exclusiva para tenants compartilhados." });
       throw erro;
     }
   },

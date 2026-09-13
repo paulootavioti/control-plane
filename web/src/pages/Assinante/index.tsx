@@ -238,6 +238,8 @@ export function Assinante() {
   const [salvandoCadastro, setSalvandoCadastro] = useState(false);
   const [novoStatus, setNovoStatus] = useState<"SUSPENSA" | "ATIVA" | null>(null);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [chaveSnapshot, setChaveSnapshot] = useState("");
+  const [salvandoChaveSnapshot, setSalvandoChaveSnapshot] = useState(false);
   const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
 
   function iniciarEdicaoCadastro() {
@@ -283,6 +285,21 @@ export function Assinante() {
       setRecarga((valor) => valor + 1);
     } catch (erroDaAcao) { setErro(getApiErrorMessage(erroDaAcao, "Não foi possível vincular o tenant compartilhado.")); }
     finally { setVinculandoTenant(false); }
+  }
+
+  async function configurarChaveSnapshot() {
+    if (!assinante || !chaveSnapshot.trim()) return;
+    setSalvandoChaveSnapshot(true);
+    setErro("");
+    try {
+      await api.put(`/assinantes/${assinante.id}/tenant-compartilhado/chave-snapshot`, {
+        chavePublica: chaveSnapshot.trim(),
+      });
+      setChaveSnapshot("");
+      setMensagemAcao("Chave pública Ed25519 dos snapshots configurada.");
+    } catch (erroDaAcao) {
+      setErro(getApiErrorMessage(erroDaAcao, "Não foi possível configurar a chave de snapshots."));
+    } finally { setSalvandoChaveSnapshot(false); }
   }
 
   async function enviarConcessao() {
@@ -418,6 +435,21 @@ export function Assinante() {
           <section className="cartao">
             <h2>Ambiente</h2>
             <p className="vazio">Ainda não provisionado.</p>
+          </section>
+        )}
+
+        {assinante.ambiente?.provider === "COMPARTILHADO" && podeVer(["ADMIN_PLATAFORMA"]) && (
+          <section className="cartao">
+            <h2>Chave dos snapshots</h2>
+            <p className="vazio">Informe somente a chave pública Ed25519 do tenant. A chave privada permanece exclusivamente no produto.</p>
+            <Field id="chave-snapshot" label="Chave pública">
+              <textarea id="chave-snapshot" className="input chave-publica" value={chaveSnapshot}
+                onChange={(evento) => setChaveSnapshot(evento.target.value)}
+                placeholder="-----BEGIN PUBLIC KEY-----" spellCheck={false} />
+            </Field>
+            <Button disabled={salvandoChaveSnapshot || !chaveSnapshot.trim()} onClick={() => void configurarChaveSnapshot()}>
+              {salvandoChaveSnapshot ? "Salvando…" : "Configurar chave pública"}
+            </Button>
           </section>
         )}
 
