@@ -240,6 +240,8 @@ export function Assinante() {
   const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [chaveSnapshot, setChaveSnapshot] = useState("");
   const [salvandoChaveSnapshot, setSalvandoChaveSnapshot] = useState(false);
+  const [competenciaFatura, setCompetenciaFatura] = useState("");
+  const [gerandoFatura, setGerandoFatura] = useState(false);
   const [cadastro, setCadastro] = useState({ nomeFantasia: "", razaoSocial: "", documento: "", slug: "", emailCobranca: "", telefone: "" });
 
   function iniciarEdicaoCadastro() {
@@ -300,6 +302,24 @@ export function Assinante() {
     } catch (erroDaAcao) {
       setErro(getApiErrorMessage(erroDaAcao, "Não foi possível configurar a chave de snapshots."));
     } finally { setSalvandoChaveSnapshot(false); }
+  }
+
+  async function gerarFatura() {
+    if (!assinante || !competenciaFatura) return;
+    setGerandoFatura(true);
+    setErro("");
+    try {
+      const resposta = await api.post<{ duplicado: boolean }>("/faturas/gerar", {
+        assinanteId: assinante.id,
+        competencia: competenciaFatura,
+      });
+      setMensagemAcao(resposta.data.duplicado
+        ? "A fatura dessa competência já existia; nenhum valor foi duplicado."
+        : "Rascunho da fatura gerado a partir do último snapshot da competência.");
+      setRecarga((valor) => valor + 1);
+    } catch (erroDaAcao) {
+      setErro(getApiErrorMessage(erroDaAcao, "Não foi possível gerar a fatura."));
+    } finally { setGerandoFatura(false); }
   }
 
   async function enviarConcessao() {
@@ -537,6 +557,21 @@ export function Assinante() {
           onCancel={() => setNovoStatus(null)}
           onConfirm={() => void alterarStatusAssinatura()}
         />
+
+        {assinante.assinatura && ["ATIVA", "INADIMPLENTE"].includes(assinante.assinatura.status) &&
+          podeVer(["FINANCEIRO", "ADMIN_PLATAFORMA"]) && (
+            <section className="cartao">
+              <h2>Gerar fatura</h2>
+              <p className="vazio">Cria um rascunho usando o snapshot agregado mais recente da competência escolhida.</p>
+              <Field id="competencia-fatura" label="Competência">
+                <Input id="competencia-fatura" type="month" value={competenciaFatura}
+                  onChange={(evento) => setCompetenciaFatura(evento.target.value)} />
+              </Field>
+              <Button disabled={gerandoFatura || !competenciaFatura} onClick={() => void gerarFatura()}>
+                {gerandoFatura ? "Gerando…" : "Gerar rascunho"}
+              </Button>
+            </section>
+          )}
 
         <section className="cartao cartao-largo">
           <h2>Faturas — últimas 12</h2>
