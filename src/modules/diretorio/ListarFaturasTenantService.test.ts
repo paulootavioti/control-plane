@@ -9,7 +9,7 @@ describe("faturas projetadas para o tenant", () => {
     };
     const resultado = await new ListarFaturasTenantService(db as never).execute("sysbelt", "academia-centro");
     expect(db.fatura.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { assinanteId: "a1" }, take: 12 }));
-    expect(resultado[0]).toMatchObject({ id: "f1", alunosContados: 8, blocos: 1, valorCentavos: 1000 });
+    expect(resultado[0]).toMatchObject({ id: "f1", alunosContados: 8, alunosPorBloco: 10, blocos: 1, precoPorBlocoCentavos: 1000, valorCentavos: 1000 });
     expect(resultado[0]).not.toHaveProperty("assinanteId");
   });
 });

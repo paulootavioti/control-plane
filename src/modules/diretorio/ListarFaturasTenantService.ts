@@ -27,7 +27,9 @@ export class ListarFaturasTenantService {
       vencimento: fatura.vencimentoEm,
       status: fatura.status,
       alunosContados: fatura.itens.reduce((total, item) => total + item.alunosAtivos, 0),
+      alunosPorBloco: fatura.itens[0]?.alunosPorBloco ?? 0,
       blocos: fatura.itens.reduce((total, item) => total + item.blocosCobrados, 0),
+      precoPorBlocoCentavos: fatura.itens[0]?.precoPorBlocoCentavos ?? 0,
       valorCentavos: fatura.totalCentavos,
       pagaEm: fatura.pagaEm,
       detalhamentoUnidades: fatura.itens.map((item) => ({
